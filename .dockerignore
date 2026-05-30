@@ -1,0 +1,10 @@
+/.git
+/.vscode
+/.idea
+/node_modules
+/vendor
+/tmp
+/storage
+*.log
+*.sql
+!database/*.sql

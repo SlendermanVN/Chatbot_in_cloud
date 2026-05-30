@@ -1,0 +1,38 @@
+groups:
+  - name: basic-alerts
+    rules:
+      - alert: MySQLDown
+        expr: up{job="mysql"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL is down"
+          description: "Prometheus can\'t scrape MySQL (job=mysql)"
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0 or up{job="redis_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Prometheus can\'t scrape Redis or its exporter"
+
+      - alert: PrometheusTargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target down"
+          description: "A target has disappeared from Prometheus for more than 5 minutes."
+
+      - alert: HighNodeLoad
+        expr: node_load1 > 4
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High node 1-minute load"
+          description: "Node load (1m) is > 4 on one or more nodes."

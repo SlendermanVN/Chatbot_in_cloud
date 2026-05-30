@@ -1,0 +1,335 @@
+version: "3.8"
+
+networks:
+  frontend:
+    driver: overlay
+  backend:
+    driver: overlay
+  monitoring:
+    driver: overlay
+
+services:
+  web:
+    image: ${WEB_IMAGE:-sportzone-web:latest}
+    ports:
+      - "8080:80"
+    environment:
+      BASE_URL: ${BASE_URL:-/}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: sportzone
+      DB_CHARSET: utf8mb4
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      # Plain-text password (not recommended for production).
+      # Set these in an external `.env` file or CI pipeline instead of storing here.
+      DB_PASS: ${DB_PASS:-sportzonepass}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      # LƯU Ý: Phải đảm bảo thư mục này được đồng bộ vật lý (NFS/GlusterFS) giữa các Swarm Nodes
+      - uploads_shared:/var/www/html/public/uploads
+    networks:
+      - frontend
+      - backend
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'curl -f "http://localhost/index.php?route=health" || exit 1',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      replicas: 4
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+  redis:
+    image: redis:7.2-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+
+  mysqld_exporter:
+    image: prom/mysqld-exporter:v0.14.0
+    configs:
+      - source: mysqld_exporter_wrapper
+        target: /etc/mysqld-exporter/start.sh
+    environment:
+      DB_USER: sportzone
+      DB_HOST: mysql
+      DB_PORT: 3306
+      # Fallback to env `DB_PASS` when Docker secrets are not used
+      DB_PASS: ${DB_PASS:-sportzonepass}
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    entrypoint: ["sh", "/etc/mysqld-exporter/start.sh"]
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_USER: sportzone
+      MYSQL_DATABASE: sportzone_db
+      # In this configuration we do not use Docker secrets. Provide passwords via env.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sportzonepass}
+    # secrets removed - using plain env variables instead
+    volumes:
+      - mysql_data:/var/lib/mysql
+    configs:
+      - source: mysql_init_script
+        target: /docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h localhost -usportzone -p"${MYSQL_PASSWORD}" || exit 1',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 1G
+        reservations:
+          cpus: "0.50"
+          memory: 256M
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=15s
+      - --disable_metrics=percpu,udp,advtcp,process,hugetlb
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.30"
+          memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+      - source: prometheus_rules
+        target: /etc/prometheus/rules/alerts.yml
+    networks:
+      - monitoring
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana_data:/var/lib/grafana
+    configs:
+      - source: grafana_datasource
+        target: /etc/grafana/provisioning/datasources/datasource.yml
+      - source: grafana_dashboard_provider
+        target: /etc/grafana/provisioning/dashboards/provider.yml
+      - source: grafana_dashboard_sportzone
+        target: /var/lib/grafana/dashboards/sportzone-swarm.json
+    networks:
+      - frontend
+      - monitoring
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+    pid: host
+    networks:
+      - monitoring
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.38.0
+    environment:
+      REDIS_ADDR: redis:6379
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    ports:
+      - "9093:9093"
+    configs:
+      - source: alertmanager_config
+        target: /etc/alertmanager/alertmanager.yml
+    networks:
+      - monitoring
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+  autoscaler:
+    image: docker:24.0.5
+    configs:
+      - source: autoscale_script
+        target: /scripts/swarm-autoscale.sh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["sh", "/scripts/swarm-autoscale.sh"]
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  mysql_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  uploads_shared:
+    # Use a named volume for local testing. For multi-node production replace
+    # this with an NFS/S3/CSI-backed volume or a host bind on each node.
+    driver: local
+
+configs:
+  prometheus_config:
+    file: ./monitoring/prometheus/prometheus.yml
+  grafana_datasource:
+    file: ./monitoring/grafana/provisioning/datasources/datasource.yml
+  grafana_dashboard_provider:
+    file: ./monitoring/grafana/provisioning/dashboards/provider.yml
+  grafana_dashboard_sportzone:
+    file: ./monitoring/grafana/dashboards/sportzone-swarm.json
+  mysql_init_script:
+    file: ./database/init.sql
+  prometheus_rules:
+    file: ./monitoring/prometheus/rules/alerts.yml
+  alertmanager_config:
+    file: ./monitoring/alertmanager/alertmanager.yml
+  autoscale_script:
+    file: ./scripts/swarm-autoscale.sh
+  mysqld_exporter_wrapper:
+    file: ./scripts/mysqld-exporter-start.sh
