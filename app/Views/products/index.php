@@ -3,6 +3,7 @@ $categories = $data['categories'] ?? [];
 $brands = $data['brands'] ?? [];
 $products = $data['products'] ?? [];
 $pagination = $data['pagination'] ?? [];
+$azure = $data['azure'] ?? [];
 
 function formatPrice($price)
 {
@@ -11,7 +12,7 @@ function formatPrice($price)
 
 function getImageFromAzure($imagePath)
 {
-    $azureBaseUrl = 'https://yourstorageaccount.blob.core.windows.net/yourcontainer/';
+    $azureBaseUrl = 'https://' . $azure['account_name'] . '.blob.core.windows.net/' . $azure['container_name'] . '/';
     return $azureBaseUrl . ltrim($imagePath, '/');
 }
 

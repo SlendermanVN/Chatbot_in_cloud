@@ -210,6 +210,13 @@ switch ($route) {
         $ctrl->success();
         break;
 
+    // ---------- 6. Chatbot ----------
+    case 'ask_chatbot':
+        $userInput = $_POST['chatbot-form'] ?? '';
+        $ctrl = new ChatbotController($pdo, $pdo2);
+        $ctrl->askChatbot($userInput);
+        break;
+
     // ============================================================
     // KHU VỰC DÀNH CHO ADMIN
     // ============================================================

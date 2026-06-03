@@ -8,8 +8,8 @@ class AzureCLoud
       'account_key' => getenv('AZURE_STORAGE_KEY'),
     ];
 
-    if (empty($data['account_name']) || empty($data['account_key']) || empty($data['container_name'])) {
-      throw new Exception("Azure Blob Storage configuration is missing. Please set AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_KEY, and AZURE_STORAGE_CONTAINER environment variables.");
+    if (empty($data['account_name']) || empty($data['account_key'])) {
+      throw new Exception("Azure Blob Storage configuration is missing. Please set AZURE_STORAGE_ACCOUNT and AZURE_STORAGE_KEY environment variables.");
     }
 
     return $data;
@@ -35,11 +35,11 @@ class AzureCLoud
     $data = [
       'endpoint' => getenv('AZURE_REDIS_ENDPOINT'),
       'port' => getenv('AZURE_REDIS_PORT'),
-      'password' => getenv('AZURE_REDIS_PASSWORD'),
+      'password' => getenv('AZURE_REDIS_KEY'),
     ];
 
     if (empty($data['endpoint']) || empty($data['port']) || empty($data['password'])) {
-      throw new Exception("Azure Redis Cache configuration is missing. Please set AZURE_REDIS_ENDPOINT, AZURE_REDIS_PORT, and AZURE_REDIS_PASSWORD environment variables.");
+      throw new Exception("Azure Redis Cache configuration is missing. Please set AZURE_REDIS_ENDPOINT, AZURE_REDIS_PORT, and AZURE_REDIS_KEY environment variables.");
     }
 
     return $data;

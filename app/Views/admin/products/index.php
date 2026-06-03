@@ -1,4 +1,7 @@
 <?php
+
+$azure = $data['azure'];
+
 function productBadge($isActive)
 {
     if ($isActive) {
@@ -9,7 +12,7 @@ function productBadge($isActive)
 
 function getImageFromAzure($imagePath)
 {
-    $azureBaseUrl = 'https://your-azure-storage.blob.core.windows.net/your-container/';
+    $azureBaseUrl = 'https://' . $azure['account_name'] . '.blob.core.windows.net/' . $azure['container_name'] . '/';
     return $azureBaseUrl . ltrim($imagePath, '/');
 }
 ?>

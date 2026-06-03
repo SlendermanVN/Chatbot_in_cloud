@@ -47,6 +47,9 @@ class ProductController extends BaseController
         $totalPages = ceil($total / $limit);
         $categories = $this->productModel->getCategories();
 
+        $azure = $this->azureBlobStorage;
+        $azure += ['container_name' => $this->containerName];
+
         $rawSettings = $this->settingModel->getAll();
         $setting = array_column($rawSettings, 'setting_value', 'setting_key');
 
@@ -58,7 +61,8 @@ class ProductController extends BaseController
             'keyword',
             'categoryIds',
             'categories',
-            'setting'
+            'setting',
+            'azure'
         ));
     }
 
@@ -165,12 +169,16 @@ class ProductController extends BaseController
         $total = $this->productModel->countAllAdmin($keyword);
         $totalPages = ceil($total / $limit);
 
+        $azure = $this->azureBlobStorage;
+        $azure += ['container_name' => $this->containerName];
+
         $this->render('admin/products/index', compact(
             'products',
             'total',
             'totalPages',
             'page',
-            'keyword'
+            'keyword',
+            'azure'
         ), 'Quản lý Sản phẩm - Admin');
     }
 
@@ -182,7 +190,11 @@ class ProductController extends BaseController
     {
         $this->requireAdmin();
         $categories = $this->productModel->getCategories();
-        $this->render('admin/products/create', compact('categories'), 'Thêm sản phẩm - Admin');
+
+        $azure = $this->azureBlobStorage;
+        $azure += ['container_name' => $this->containerName];
+
+        $this->render('admin/products/create', compact('categories', 'azure'), 'Thêm sản phẩm - Admin');
     }
 
     /**
@@ -279,7 +291,9 @@ class ProductController extends BaseController
         $product['images'] = $this->productModel->getImages($id);
 
         $categories = $this->productModel->getCategories();
-        $this->render('admin/products/edit', compact('product', 'categories'), 'Sửa sản phẩm - Admin');
+        $azure = $this->azureBlobStorage;
+        $azure += ['container_name' => $this->containerName];
+        $this->render('admin/products/edit', compact('product', 'categories', 'azure'), 'Sửa sản phẩm - Admin');
     }
 
     /**

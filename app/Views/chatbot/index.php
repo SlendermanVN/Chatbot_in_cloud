@@ -66,7 +66,7 @@
 						<?php endif; ?>
 					</div>
 
-					<form id="chatbot-form" method="POST" action="<?= BASE_URL ?>/index.php?route=chatbot"
+					<form id="chatbot-form" method="POST" action="<?= BASE_URL ?>/index.php?route=ask_chatbot"
 						class="shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
 						<div class="flex flex-col sm:flex-row gap-3">
 							<div class="flex-1 relative">
@@ -171,9 +171,6 @@
 						return;
 					}
 
-					const formData = new FormData(form);
-					formData.set('message_text', question);
-
 					appendMessage(question, true);
 					input.value = '';
 					input.focus();
@@ -184,22 +181,23 @@
 					try {
 						const response = await fetch(form.action, {
 							method: 'POST',
-							body: formData,
 							credentials: 'same-origin',
 							headers: {
+								'Content-Type': 'application/json',
 								'X-Requested-With': 'XMLHttpRequest',
 								'Accept': 'application/json'
-							}
+							},
+							body: JSON.stringify({ prompt: question })
 						});
 
 						const data = await response.json();
 
-						if (!response.ok || !data.success) {
+						if (!response.ok || data.status !== 'success') {
 							appendMessage(data.message || 'Không thể gửi câu hỏi lúc này.', false);
 							return;
 						}
 
-						appendMessage(data.reply, false);
+						appendMessage(data.message, false);
 					} catch (error) {
 						appendMessage('Không thể kết nối tới máy chủ. Vui lòng thử lại.', false);
 					} finally {
