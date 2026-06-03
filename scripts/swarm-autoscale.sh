@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-set -euo pipefail
+set -eu
 
 # Simple Swarm autoscaler for the web service.
 # It uses CPU pressure as a practical proxy for request spikes.
@@ -26,10 +26,10 @@ get_replica_count() {
 }
 
 get_average_cpu() {
-  local containers
+  containers=""
   containers=$(docker ps --filter "label=com.docker.swarm.service.name=${FULL_SERVICE_NAME}" -q)
 
-  if [[ -z "${containers}" ]]; then
+  if [ -z "${containers}" ]; then
     echo "0"
     return
   fi
@@ -40,7 +40,7 @@ get_average_cpu() {
 }
 
 scale_service() {
-  local target_replicas="$1"
+  target_replicas="$1"
   docker service scale "${FULL_SERVICE_NAME}=${target_replicas}" >/dev/null
   echo "Scaled ${FULL_SERVICE_NAME} to ${target_replicas} replicas"
 }
@@ -65,13 +65,13 @@ while true; do
     down_streak=0
   fi
 
-  if [[ ${up_streak} -ge ${UP_STREAK_REQUIRED} && ${current_replicas} -lt ${MAX_REPLICAS} ]]; then
+  if [ "${up_streak}" -ge "${UP_STREAK_REQUIRED}" ] && [ "${current_replicas}" -lt "${MAX_REPLICAS}" ]; then
     scale_service $((current_replicas + 1))
     up_streak=0
     down_streak=0
   fi
 
-  if [[ ${down_streak} -ge ${DOWN_STREAK_REQUIRED} && ${current_replicas} -gt ${MIN_REPLICAS} ]]; then
+  if [ "${down_streak}" -ge "${DOWN_STREAK_REQUIRED}" ] && [ "${current_replicas}" -gt "${MIN_REPLICAS}" ]; then
     scale_service $((current_replicas - 1))
     up_streak=0
     down_streak=0

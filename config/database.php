@@ -10,9 +10,9 @@ class Database
 
     public function __construct($db)
     {
-        $this->host = getenv('DB_HOST') ?: 'localhost';
-        $this->user = getenv('DB_USER') ?: 'root';
-        $this->pass = getenv('DB_PASS') ?: '';
+        $this->host = getenv('DB_HOST') ?: getenv('AZURE_MYSQL_HOST') ?: 'localhost';
+        $this->user = getenv('DB_USER') ?: getenv('AZURE_MYSQL_USER') ?: 'root';
+        $this->pass = getenv('DB_PASS') ?: getenv('DB_PASSWORD') ?: getenv('AZURE_MYSQL_PASSWORD') ?: '';
         $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
         $this->port = getenv('DB_PORT') ?: '3306';
 

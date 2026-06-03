@@ -21,11 +21,11 @@ services:
       DB_CHARSET: utf8mb4
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
       # Plain-text password (not recommended for production).
       # Set these in an external `.env` file or CI pipeline instead of storing here.
       DB_PASS: ${DB_PASS:-sportzonepass}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
       # LƯU Ý: Phải đảm bảo thư mục này được đồng bộ vật lý (NFS/GlusterFS) giữa các Swarm Nodes
       - uploads_shared:/var/www/html/public/uploads
@@ -43,7 +43,7 @@ services:
       retries: 3
       start_period: 30s
     deploy:
-      replicas: 4
+      replicas: 1
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -89,7 +89,7 @@ services:
   mysqld_exporter:
     image: prom/mysqld-exporter:v0.14.0
     configs:
-      - source: mysqld_exporter_wrapper
+      - source: mysqld_exporter_wrapper_v4
         target: /etc/mysqld-exporter/start.sh
     environment:
       DB_USER: sportzone
@@ -120,7 +120,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     configs:
-      - source: mysql_init_script
+      - source: mysql_init_script_v4
         target: /docker-entrypoint-initdb.d/init.sql
     networks:
       - backend
@@ -270,6 +270,31 @@ services:
       restart_policy:
         condition: on-failure
 
+  ollama:
+    image: ollama/ollama:latest
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "ollama serve & pid=$$!; until ollama list >/dev/null 2>&1; do sleep 1; done; ollama pull $${OLLAMA_MODEL:-qwen2.5:3b-instruct}; wait $$pid",
+      ]
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_KEEP_ALIVE: 24h
+      OLLAMA_MODELS: /root/.ollama/models
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
   alertmanager:
     image: prom/alertmanager:v0.27.0
     ports:
@@ -288,9 +313,9 @@ services:
         condition: on-failure
 
   autoscaler:
-    image: docker:24.0.5
+    image: docker:27.5.1
     configs:
-      - source: autoscale_script
+      - source: autoscale_script_v4
         target: /scripts/swarm-autoscale.sh
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -310,6 +335,7 @@ volumes:
   prometheus_data:
   grafana_data:
   uploads_shared:
+  ollama_data:
     # Use a named volume for local testing. For multi-node production replace
     # this with an NFS/S3/CSI-backed volume or a host bind on each node.
     driver: local
@@ -323,13 +349,13 @@ configs:
     file: ./monitoring/grafana/provisioning/dashboards/provider.yml
   grafana_dashboard_sportzone:
     file: ./monitoring/grafana/dashboards/sportzone-swarm.json
-  mysql_init_script:
+  mysql_init_script_v4:
     file: ./database/init.sql
   prometheus_rules:
     file: ./monitoring/prometheus/rules/alerts.yml
   alertmanager_config:
     file: ./monitoring/alertmanager/alertmanager.yml
-  autoscale_script:
+  autoscale_script_v4:
     file: ./scripts/swarm-autoscale.sh
-  mysqld_exporter_wrapper:
+  mysqld_exporter_wrapper_v4:
     file: ./scripts/mysqld-exporter-start.sh

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        Chatbot - SportZone | SportZone Vietnam    </title>
+
+    <!-- SEO Meta Tags -->
+            <meta name="description"
+            content="SportZone Vietnam - Chuyên cung cấp dụng cụ thể thao chính hãng, chất lượng cao. Giày chạy bộ, bóng đá, bơi lội và nhiều hơn nữa.">
+            <!-- Open Graph -->
+    <meta property="og:site_name" content="SportZone Vietnam">
+    <meta property="og:type" content="website">
+    <meta property="og:title"
+        content="Chatbot - SportZone | SportZone Vietnam">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,800;1,900&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#ff6600', // Cam Neon
+                        'primary-dark': '#cc5200',
+                        surface: '#121212',
+                        background: '#0a0a0a',
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(255, 102, 0, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Vẽ nền lưới (Grid Background) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #e5e7eb;
+        }
+
+        .hover-lift {
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Hiệu ứng gạch chân cho menu active/hover */
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: #ff6600;
+            transition: width 0.3s;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-screen">
+
+    <header class="bg-[#0b0f19]/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-[80px]">
+
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="/index.php"
+                        class="text-2xl md:text-3xl font-black italic tracking-widest text-primary hover:text-white transition-colors duration-300">
+                        SportZone
+                    </a>
+                </div>
+
+                <nav class="hidden md:flex space-x-8 mt-2">
+                    <a href="/index.php"
+                        class="nav-link text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white transition-colors">Trang
+                        chủ</a>
+                    <a href="/index.php?route=products"
+                        class="nav-link text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white transition-colors">Sản
+                        phẩm</a>
+                    <a href="/index.php?route=news"
+                        class="nav-link text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white transition-colors">Tin
+                        tức</a>
+                    <a href="/index.php?route=about"
+                        class="nav-link text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white transition-colors">Giới
+                        thiệu</a>
+                    <a href="/index.php?route=faqs"
+                        class="nav-link text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white transition-colors">FAQ</a>
+                    <a href="/index.php?route=contact"
+                        class="nav-link text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white transition-colors">Liên
+                        hệ</a>
+                </nav>
+
+                <div class="hidden md:flex items-center space-x-6">
+
+                                            <a href="/index.php?route=chatbot"
+                            class="text-primary hover:text-white relative transition-colors group">
+                            <i class="fa-solid fa-robot text-xl group-hover:scale-110 transition-transform"></i>
+                        </a>
+                    
+                                            <a href="/index.php?route=cart"
+                            class="text-primary hover:text-white relative transition-colors group">
+                            <i class="fa-solid fa-cart-shopping text-xl group-hover:scale-110 transition-transform"></i>
+                            <span id="cartCountSpan"
+                                class="absolute -top-2 -right-2 bg-white text-primary text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                0                            </span>
+                        </a>
+
+                        <div class="h-5 w-px bg-gray-700 mx-1"></div>
+                                                                <div class="relative group cursor-pointer flex items-center gap-3">
+                            <a href="/index.php?route=profile"
+                                class="text-gray-300 font-medium flex items-center gap-2 hover:text-primary transition-colors">
+                                                                <img src="https://ui-avatars.com/api/?name=member&background=ff6600&color=fff&bold=true" alt="Avatar"
+                                    class="w-8 h-8 rounded-full border border-gray-700 object-cover">
+                                <span
+                                    class="text-sm font-bold tracking-wide">member</span>
+                            </a>
+
+                            
+                            <a href="/index.php?route=logout"
+                                class="px-3 py-1.5 border border-gray-700 rounded text-xs tracking-wider uppercase text-gray-400 hover:text-white hover:border-primary transition-all font-bold ml-2">Đăng
+                                xuất</a>
+                        </div>
+                    
+                </div>
+
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-button"
+                        class="text-primary hover:text-white focus:outline-none transition-colors">
+                        <i class="fa-solid fa-bars text-2xl" id="menu-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu"
+            class="hidden md:hidden bg-[#0b0f19] border-t border-gray-800 animate-slideDown overflow-hidden">
+            <div class="px-4 pt-4 pb-6 space-y-2">
+                <a href="/index.php"
+                    class="block px-4 py-3 text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all">Trang
+                    chủ</a>
+                <a href="/index.php?route=products"
+                    class="block px-4 py-3 text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all">Sản
+                    phẩm</a>
+                <a href="/index.php?route=news"
+                    class="block px-4 py-3 text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all">Tin
+                    tức</a>
+                <a href="/index.php?route=about"
+                    class="block px-4 py-3 text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all">Giới
+                    thiệu</a>
+                <a href="/index.php?route=faqs"
+                    class="block px-4 py-3 text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all">FAQ</a>
+                <a href="/index.php?route=contact"
+                    class="block px-4 py-3 text-sm font-bold tracking-widest uppercase text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all">Liên
+                    hệ</a>
+
+                <div class="pt-4 border-t border-gray-800 mt-4 flex flex-col gap-3">
+                                            <div class="flex items-center gap-3 px-4 py-2 mb-2">
+                            <img src="https://ui-avatars.com/api/?name=member&background=ff6600&color=fff&bold=true" alt="Avatar"
+                                class="w-10 h-10 rounded-full border border-gray-700 object-cover">
+                            <div>
+                                <div class="text-white font-bold text-sm">member                                </div>
+                                <div class="text-gray-500 text-[10px] uppercase tracking-widest">
+                                    member                                </div>
+                            </div>
+                        </div>
+                        <a href="/index.php?route=cart"
+                            class="flex items-center justify-between px-4 py-3 bg-primary/10 text-primary rounded-xl font-bold text-sm">
+                            <span>Giỏ hàng</span>
+                            <span
+                                class="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+                        </a>
+                        <a href="/index.php?route=chatbot"
+                            class="block px-4 py-3 text-sm font-bold text-gray-400 hover:text-white rounded-xl">
+                            Trợ lý ảo
+                        </a>
+                        <a href="/index.php?route=profile"
+                            class="block px-4 py-3 text-sm font-bold text-gray-400 hover:text-white rounded-xl">Hồ sơ cá
+                            nhân</a>
+                        <a href="/index.php?route=logout"
+                            class="block px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl">Đăng
+                            xuất</a>
+                                    </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const menuBtn = document.getElementById('mobile-menu-button');
+                const mobileMenu = document.getElementById('mobile-menu');
+                const menuIcon = document.getElementById('menu-icon');
+
+                menuBtn.addEventListener('click', function () {
+                    mobileMenu.classList.toggle('hidden');
+                    const isHidden = mobileMenu.classList.contains('hidden');
+
+                    // Toggle icon between bars and xmark
+                    menuIcon.classList.toggle('fa-bars', isHidden);
+                    menuIcon.classList.toggle('fa-xmark', !isHidden);
+                });
+            });
+        </script>
+
+        <style>
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .animate-slideDown {
+                animation: slideDown 0.3s ease-out forwards;
+            }
+        </style>
+    </header>
+
+    <main class="flex-grow w-full">
+        <!-- Global Flash Messages -->
+        <div class="bg-[#0b0f19] min-h-screen py-10 lg:py-16 text-gray-300">
+	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+		<!-- Page Header -->
+		<div class="text-center mb-12">
+			<h1 class="text-3xl font-extrabold text-white tracking-tight sm:text-4xl">Trợ lý ảo Sportzone Chatbot</h1>
+			<p class="mt-3 max-w-2xl mx-auto text-lg text-gray-400 sm:mt-4">Giải đáp thắc mắc và cung cấp thông tin về thể
+				thao và luyện tập.</p>
+		</div>
+
+		<!-- Chatbot Interface -->
+		<div class="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800 top-24">
+
+			<!-- Chatbot header -->
+			<header class="flex items-center mb-6 text-white">
+				<div class="w-12 h-12 bg-[#ff6600] rounded-full border border-gray-700 flex items-center justify-center">
+					<i class="fa-solid fa-robot text-2xl"></i>
+				</div>
+				<div class="ml-4">
+					<h2 class="text-2xl font-semibold text-white">Sportzone Chatbot</h2>
+				</div>
+			</header>
+
+			<!-- Chatbot message UI -->
+			<div class="grid xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.7fr)] gap-6 items-start">
+				<div class="space-y-5 flex flex-col h-[46rem]">
+					<div id="chatbot-message-list"
+						class="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1 bg-gray-900/80 border border-gray-800 rounded-2xl p-5">
+													<div class="rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-center">
+								<div
+									class="mx-auto w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-[#ff8f3d] mb-3">
+									<i class="fa-solid fa-message"></i>
+								</div>
+								<h3 class="text-white font-bold">Bắt đầu cuộc trò chuyện</h3>
+								<p class="text-gray-400 text-sm mt-2">Lịch sử tin nhắn sẽ xuất hiện ở đây khi bạn đã trao đổi với chatbot.
+								</p>
+							</div>
+											</div>
+
+					<form id="chatbot-form" method="POST" action="/index.php?route=chatbot"
+						class="shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+						<div class="flex flex-col sm:flex-row gap-3">
+							<div class="flex-1 relative">
+								<i class="fa-regular fa-face-smile absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+								<input id="chatbot-input" type="text" name="message_text" required autocomplete="off"
+									placeholder="Nhập câu hỏi cho Sportzone Chatbot..."
+									class="w-full rounded-2xl border border-white/10 bg-[#090d16] pl-11 pr-4 py-4 text-sm text-white placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-[#ff6600]/50 focus:border-[#ff6600]/50">
+							</div>
+							<button id="chatbot-send-btn" type="submit"
+								class="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#ff6600] to-[#ff9a4d] px-6 py-4 font-bold text-white shadow-lg shadow-[#ff6600]/20">
+								<i class="fa-solid fa-paper-plane"></i>
+								Gửi tin nhắn
+							</button>
+						</div>
+					</form>
+				</div>
+
+				<aside class="space-y-5">
+					<div class="rounded-2xl border border-[#ff6600]/20 bg-gradient-to-r from-[#ff6600]/10 to-transparent p-5">
+						<div class="flex items-center gap-3 mb-4">
+							<div class="w-10 h-10 rounded-2xl bg-[#ff6600]/15 text-[#ff8f3d] flex items-center justify-center">
+								<i class="fa-solid fa-lightbulb"></i>
+							</div>
+							<div>
+								<h3 class="text-white font-bold">Gợi ý nhanh</h3>
+								<p class="text-sm text-gray-400">Chọn một câu hỏi mẫu để bắt đầu.</p>
+							</div>
+						</div>
+						<div class="flex flex-wrap gap-3">
+							<span class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200">Chính sách
+								đổi trả như thế nào?</span>
+							<span class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200">Có giao hàng
+								trong ngày không?</span>
+							<span class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200">Làm sao để
+								chọn size phù hợp?</span>
+						</div>
+					</div>
+					<div class="bg-gray-900/80 border border-gray-800 rounded-2xl p-5">
+						<div class="text-[11px] font-black uppercase tracking-[0.22em] text-[#ff8f3d] mb-2">Tips</div>
+						<h3 class="text-lg font-bold text-white mb-3">Mẹo hỏi chatbot</h3>
+						<ul class="space-y-2 text-sm text-gray-400">
+							<li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i><span>Hỏi ngắn, rõ
+									ràng.</span></li>
+							<li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i><span>Ưu tiên từ khóa như
+									tên sản phẩm hoặc size.</span></li>
+							<li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i><span>Chọn gợi ý nhanh nếu
+									muốn bắt đầu ngay.</span></li>
+						</ul>
+					</div>
+				</aside>
+			</div>
+		</div>
+
+		<script>
+			(function () {
+				const form = document.getElementById('chatbot-form');
+				const input = document.getElementById('chatbot-input');
+				const sendBtn = document.getElementById('chatbot-send-btn');
+				const messageList = document.getElementById('chatbot-message-list');
+
+				if (!form || !input || !sendBtn || !messageList) {
+					return;
+				}
+
+				const escapeHtml = (value) => String(value)
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#039;');
+
+				const scrollToBottom = () => {
+					messageList.scrollTop = messageList.scrollHeight;
+				};
+
+				const appendMessage = (text, isUser) => {
+					const wrapper = document.createElement('div');
+					wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+
+					wrapper.innerHTML = `
+					<div class="max-w-[88%] flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}">
+						<div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${isUser ? 'bg-white/10 text-white' : 'bg-gradient-to-br from-[#ff6600] to-[#ff9a4d] text-white'}">
+							<i class="fa-solid ${isUser ? 'fa-user' : 'fa-robot'} text-sm"></i>
+						</div>
+						<div class="space-y-1 ${isUser ? 'text-right' : 'text-left'}">
+							<div class="inline-block rounded-[1.5rem] px-4 py-3 border ${isUser ? 'border-[#ff6600]/25 bg-[#ff6600]/15 text-white' : 'border-white/10 bg-white/5 text-gray-200'}">
+								<p class="whitespace-pre-line leading-relaxed text-sm">${escapeHtml(text)}</p>
+							</div>
+						</div>
+					</div>
+				`;
+
+					messageList.appendChild(wrapper);
+					scrollToBottom();
+				};
+
+				form.addEventListener('submit', async (event) => {
+					event.preventDefault();
+
+					const question = input.value.trim();
+					if (!question) {
+						return;
+					}
+
+					const formData = new FormData(form);
+					formData.set('message_text', question);
+
+					appendMessage(question, true);
+					input.value = '';
+					input.focus();
+
+					sendBtn.disabled = true;
+					sendBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
+					try {
+						const response = await fetch(form.action, {
+							method: 'POST',
+							body: formData,
+							headers: {
+								'X-Requested-With': 'XMLHttpRequest',
+								'Accept': 'application/json'
+							}
+						});
+
+						const data = await response.json();
+
+						if (!response.ok || !data.success) {
+							appendMessage(data.message || 'Không thể gửi câu hỏi lúc này.', false);
+							return;
+						}
+
+						appendMessage(data.reply, false);
+					} catch (error) {
+						appendMessage('Không thể kết nối tới máy chủ. Vui lòng thử lại.', false);
+					} finally {
+						sendBtn.disabled = false;
+						sendBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+					}
+				});
+
+				scrollToBottom();
+			})();
+		</script>
+	</div>
+</div></main> <footer class="bg-[#0b0f19] text-gray-400 py-16 border-t border-gray-800 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                
+                <!-- Brand + Tagline + Social -->
+                <div class="space-y-6">
+                    <a href="/?route=home" class="text-2xl font-black italic tracking-widest text-primary">
+                        SportZone Vietnam                    </a>
+                    <p class="text-sm text-gray-500 leading-relaxed mt-4">
+                        Dá»¥ng cá»¥ thá»ƒ thao chÃ­nh hÃ£ng - GiÃ¡ tá»‘t                    </p>
+                    <div class="flex space-x-4 pt-2">
+                        <a href="https://facebook.com/sportzone.vn" 
+                           target="_blank" rel="noopener"
+                           class="w-10 h-10 rounded flex items-center justify-center bg-gray-800 text-gray-400 hover:bg-primary hover:text-white transition-all">
+                            <i class="fa-brands fa-facebook-f"></i>
+                        </a>
+                        <a href="https://instagram.com/sportzone.vn"
+                           target="_blank" rel="noopener"
+                           class="w-10 h-10 rounded flex items-center justify-center bg-gray-800 text-gray-400 hover:bg-primary hover:text-white transition-all">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                        <a href="https://youtube.com/@sportzone"
+                           target="_blank" rel="noopener"
+                           class="w-10 h-10 rounded flex items-center justify-center bg-gray-800 text-gray-400 hover:bg-primary hover:text-white transition-all">
+                            <i class="fa-brands fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Về Chúng Tôi -->
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-6 uppercase tracking-widest">Về Chúng Tôi</h3>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="/?route=about" class="hover:text-primary transition-colors flex items-center gap-2"><i class="fa-solid fa-angle-right text-[10px] text-primary"></i> Giới thiệu công ty</a></li>
+                        <li><a href="/?route=news" class="hover:text-primary transition-colors flex items-center gap-2"><i class="fa-solid fa-angle-right text-[10px] text-primary"></i> Tin tức thể thao</a></li>
+                        <li><a href="/?route=faqs" class="hover:text-primary transition-colors flex items-center gap-2"><i class="fa-solid fa-angle-right text-[10px] text-primary"></i> Hỏi đáp thường gặp</a></li>
+                        <li><a href="/?route=contact" class="hover:text-primary transition-colors flex items-center gap-2"><i class="fa-solid fa-angle-right text-[10px] text-primary"></i> Chăm sóc khách hàng</a></li>
+                    </ul>
+                </div>
+
+                <!-- Thông Tin Liên Hệ -->
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-6 uppercase tracking-widest">Liên Hệ</h3>
+                    <ul class="space-y-3 text-sm">
+                                                <li class="flex items-start gap-2 text-gray-500">
+                            <i class="fa-solid fa-location-dot text-primary mt-0.5 flex-shrink-0"></i>
+                            123 LÃ½ Tá»± Trá»ng, Q.1, TP.HCM                        </li>
+                                                                        <li class="flex items-center gap-2 text-gray-500">
+                            <i class="fa-solid fa-phone text-primary flex-shrink-0"></i>
+                            <a href="tel:1900-6969" class="hover:text-primary transition-colors">
+                                1900-6969                            </a>
+                        </li>
+                                                                        <li class="flex items-center gap-2 text-gray-500">
+                            <i class="fa-solid fa-envelope text-primary flex-shrink-0"></i>
+                            <a href="mailto:support@sportzone.vn" class="hover:text-primary transition-colors">
+                                support@sportzone.vn                            </a>
+                        </li>
+                                                <li><a href="/?route=faqs" class="hover:text-primary transition-colors flex items-center gap-2"><i class="fa-solid fa-angle-right text-[10px] text-primary"></i> Chính sách vận chuyển</a></li>
+                        <li><a href="/?route=faqs" class="hover:text-primary transition-colors flex items-center gap-2"><i class="fa-solid fa-angle-right text-[10px] text-primary"></i> Đổi trả 30 ngày</a></li>
+                    </ul>
+                </div>
+
+                <!-- Nhận Báo Giá -->
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-6 uppercase tracking-widest">Nhận Báo Giá</h3>
+                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Đăng ký để nhận thông báo về các đợt DROP sản phẩm giới hạn.</p>
+                    <form class="flex group" onsubmit="event.preventDefault();">
+                        <input type="email" placeholder="Email address..." class="px-4 py-3 bg-gray-900 text-white rounded-l w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700 transition-all text-sm">
+                        <button class="bg-gray-800 border-y border-r border-gray-700 hover:bg-primary hover:border-primary transition-colors px-5 rounded-r text-white font-medium"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
+                </div>
+                
+            </div>
+
+            <div class="border-t border-gray-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-xs tracking-wider text-gray-600 uppercase font-bold">
+                <p>&copy; 2026 SportZone Vietnam. High-Performance Digital Athletics.</p>
+                <div class="mt-4 md:mt-0 flex items-center gap-6">
+                    <a href="/?route=faqs" class="hover:text-primary transition-colors">Terms of Service</a>
+                    <a href="/?route=faqs" class="hover:text-primary transition-colors">Privacy Protocol</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -3,6 +3,23 @@
 // ENTRY POINT - Router (Cổng trung tâm)
 // ============================================================
 
+// Use Redis-backed sessions when the runtime provides a Redis endpoint.
+// This keeps login state stable across multiple web replicas.
+$redisHost = getenv('REDIS_HOST') ?: getenv('AZURE_REDIS_HOST');
+$redisPort = getenv('REDIS_PORT') ?: '6379';
+$redisPassword = getenv('REDIS_PASSWORD') ?: getenv('AZURE_REDIS_KEY');
+
+if (!empty($redisHost) && extension_loaded('redis')) {
+    ini_set('session.save_handler', 'redis');
+
+    $sessionSavePath = 'tcp://' . $redisHost . ':' . $redisPort;
+    if (!empty($redisPassword)) {
+        $sessionSavePath .= '?auth=' . rawurlencode($redisPassword);
+    }
+
+    ini_set('session.save_path', $sessionSavePath);
+}
+
 session_start();
 ob_start();
 

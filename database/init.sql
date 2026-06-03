@@ -1297,5 +1297,9 @@ CREATE TABLE bot_knowledge_base (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng tri thức của bot, chứa các cặp từ khóa và câu trả lời để bot có thể phản hồi nhanh dựa trên từ khóa';
 
 -- Bật lại kiểm tra khóa ngoại sau khi cấu trúc được dựng xong
-SET FOREIGN_KEY_CHECKS = 1;G R A N T   A L L   P R I V I L E G E S   O N   c h a t b o t _ d b . *   T O   ' s p o r t z o n e ' @ ' % ' ;   F L U S H   P R I V I L E G E S ;  
- 
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE DATABASE IF NOT EXISTS chatbot_db;
+GRANT ALL PRIVILEGES ON sportzone_db.* TO 'sportzone'@'%';
+GRANT ALL PRIVILEGES ON chatbot_db.* TO 'sportzone'@'%';
+FLUSH PRIVILEGES;

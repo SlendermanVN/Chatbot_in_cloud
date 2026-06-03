@@ -62,8 +62,9 @@ MYSQL_ROOT_PASSWORD=your_root_password
 MYSQL_PASSWORD=your_db_password
 DB_PASS=your_db_password
 
-# API Key cho chatbot
-GEMINI_API_KEY=your_gemini_key
+# Cấu hình model AI local chạy bằng Ollama
+OLLAMA_HOST=http://ollama:11434
+OLLAMA_MODEL=qwen2.5:3b-instruct
 ```
 
 ---
@@ -119,14 +120,13 @@ Linux/macOS:
 export MYSQL_ROOT_PASSWORD=rootpass
 export MYSQL_PASSWORD=sportzonepass
 export DB_PASS=sportzonepass
-export GEMINI_API_KEY=YOUR_KEY
 docker stack deploy -c docker-stack.yml sportzone
 ```
 
 PowerShell (Windows):
 
 ```powershell
-$env:MYSQL_ROOT_PASSWORD="rootpass"; $env:MYSQL_PASSWORD="sportzonepass"; $env:DB_PASS="sportzonepass"; $env:GEMINI_API_KEY="YOUR_KEY"
+$env:MYSQL_ROOT_PASSWORD="rootpass"; $env:MYSQL_PASSWORD="sportzonepass"; $env:DB_PASS="sportzonepass"; $env:OLLAMA_HOST="http://ollama:11434"; $env:OLLAMA_MODEL="qwen2.5:3b-instruct"
 docker stack deploy -c docker-stack.yml sportzone
 ```
 
@@ -177,10 +177,10 @@ Ví dụ nhanh sửa Slack webhook trong Alertmanager config:
 
 ```yaml
 receivers:
-- name: slack-alerts
+  - name: slack-alerts
 slack_configs:
-- api_url: 'https://hooks.slack.com/services/REPLACE/THIS/HOOK'
-channel: '#alerts'
+  - api_url: "https://hooks.slack.com/services/REPLACE/THIS/HOOK"
+channel: "#alerts"
 ```
 
 ---
@@ -196,6 +196,6 @@ docker stack rm sportzone
 ## K — Gợi ý production
 
 - Dùng managed DB/Redis hoặc triển khai HA cho dữ liệu (MySQL/Galera, Redis Sentinel/Cluster).
-- KHI LÊN PRODUCTION THẬT SỰ KHUYẾN CÁO SỬ DỤNG DOCKER SECRETS HOẶC VAULT CHO `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` hay `GEMINI_API_KEY` chứ không truyền trần trụi dưới dạng Shell Environment.
+- KHI LÊN PRODUCTION THẬT SỰ KHUYẾN CÁO SỬ DỤNG DOCKER SECRETS HOẶC VAULT CHO `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`, `OLLAMA_HOST` hoặc các thông tin nhạy cảm khác chứ không truyền trần trụi dưới dạng Shell Environment.
 - Dùng shared storage (S3, NFS, or CSI) cho `uploads_shared` trên multi-node.
 - Cân nhắc chuyển sang Kubernetes + Prometheus Operator cho scale/observability production.

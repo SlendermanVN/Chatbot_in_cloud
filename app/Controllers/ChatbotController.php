@@ -64,7 +64,7 @@ class ChatbotController extends BaseController
           if ($cachedReply !== null) {
             $botReply = $cachedReply;
           } else {
-            $botReply = $this->generateGeminiReply($question, $aiContext);
+            $botReply = $this->generateOllamaReply($question, $aiContext);
             $this->setCachedReply($userId, $normalizedQuestion, $botReply);
           }
 
@@ -101,54 +101,48 @@ class ChatbotController extends BaseController
     $this->render('chatbot/index', compact('chatHistory', 'knowledgeBase'), 'Chatbot - SportZone');
   }
 
-  private function generateGeminiReply($question, array $aiContext = [])
+  private function generateOllamaReply($question, array $aiContext = [])
   {
-    $apiKey = $this->getGeminiApiKey();
-    $modelCandidates = $this->getGeminiModelCandidates();
+    $model = $this->getOllamaModel();
+    $host = $this->getOllamaHost();
 
-    if (empty($apiKey)) {
-      return 'Chưa cấu hình GEMINI_API_KEY nên mình chưa thể gọi Gemini. Hãy thêm biến môi trường này rồi thử lại.';
+    if (empty($host) || empty($model)) {
+      return $this->buildFallbackReply($question, $aiContext, 'Chưa cấu hình OLLAMA_HOST hoặc OLLAMA_MODEL.');
     }
 
-    $prompt = $this->buildGeminiPrompt($question, $aiContext);
+    $prompt = $this->buildOllamaPrompt($question, $aiContext);
 
     $payload = [
-      'contents' => [
+      'model' => $model,
+      'messages' => [
+        [
+          'role' => 'system',
+          'content' => 'Bạn là trợ lý ảo của SportZone. Trả lời ngắn gọn, rõ ràng, đúng trọng tâm bằng tiếng Việt. Chỉ dùng thông tin trong phần nguồn nếu phù hợp. Nếu thiếu dữ liệu, nói rõ là chưa có đủ thông tin thay vì bịa.',
+        ],
         [
           'role' => 'user',
-          'parts' => [
-            ['text' => $prompt]
-          ]
-        ]
+          'content' => $prompt,
+        ],
       ],
-      'generationConfig' => [
+      'stream' => false,
+      'options' => [
         'temperature' => 0.4,
-        'maxOutputTokens' => 512,
-      ]
+        'num_predict' => 512,
+      ],
     ];
 
-    foreach ($modelCandidates as $model) {
-      $result = $this->callGeminiModel($apiKey, $model, $payload);
+    $result = $this->callOllamaModel($host, $payload);
 
-      if (($result['ok'] ?? false) === true) {
-        return $result['text'];
-      }
-
-      if (($result['statusCode'] ?? 0) === 429) {
-        continue;
-      }
-
-      if (($result['statusCode'] ?? 0) !== 404) {
-        return $this->buildFallbackReply($question, $aiContext, $result['message'] ?? '');
-      }
+    if (($result['ok'] ?? false) === true) {
+      return $result['text'];
     }
 
-    return $this->buildFallbackReply($question, $aiContext, 'Gemini đang bị giới hạn hoặc không tìm thấy model phù hợp.');
+    return $this->buildFallbackReply($question, $aiContext, $result['message'] ?? 'Không thể kết nối tới model AI nội bộ.');
   }
 
-  private function callGeminiModel($apiKey, $model, array $payload)
+  private function callOllamaModel($host, array $payload)
   {
-    $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model) . ':generateContent?key=' . urlencode($apiKey);
+    $endpoint = rtrim($host, '/') . '/api/chat';
     $ch = curl_init($endpoint);
 
     curl_setopt_array($ch, [
@@ -167,7 +161,7 @@ class ChatbotController extends BaseController
       $error = curl_error($ch);
       return [
         'ok' => false,
-        'message' => 'Không thể gọi Gemini lúc này. Lỗi kết nối: ' . $error,
+        'message' => 'Không thể gọi model AI nội bộ lúc này. Lỗi kết nối: ' . $error,
       ];
     }
 
@@ -177,17 +171,17 @@ class ChatbotController extends BaseController
       return [
         'ok' => false,
         'statusCode' => $statusCode,
-        'message' => 'Gemini trả về lỗi HTTP ' . $statusCode . ' với model ' . $model . '.',
+        'message' => 'Model AI nội bộ trả về lỗi HTTP ' . $statusCode . '.',
       ];
     }
 
     $data = json_decode($response, true);
-    $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+    $text = $data['message']['content'] ?? '';
 
     if (trim($text) === '') {
       return [
         'ok' => false,
-        'message' => 'Mình chưa nhận được phản hồi hợp lệ từ Gemini. Hãy thử đặt câu hỏi khác.',
+        'message' => 'Mình chưa nhận được phản hồi hợp lệ từ model AI nội bộ. Hãy thử đặt câu hỏi khác.',
       ];
     }
 
@@ -241,7 +235,7 @@ class ChatbotController extends BaseController
     }
 
     $userName = $aiContext['user']['full_name'] ?? $aiContext['user']['username'] ?? 'bạn';
-    $fallback = 'Hiện tại hệ thống đang gặp sự cố, ';
+    $fallback = 'Hiện tại model AI nội bộ chưa sẵn sàng, nhưng mình vẫn có thể hỗ trợ bạn tra cứu theo dữ liệu sản phẩm, đơn hàng và FAQ.';
     return trim($fallback);
   }
 
@@ -329,11 +323,11 @@ class ChatbotController extends BaseController
     ];
   }
 
-  private function buildGeminiPrompt($question, array $context)
+  private function buildOllamaPrompt($question, array $context)
   {
     $contextJson = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-    return "Bạn là trợ lý ảo của SportZone. Trả lời ngắn gọn, rõ ràng, đúng trọng tâm bằng tiếng Việt.\n"
+    return "Hãy trả lời ngắn gọn, rõ ràng, đúng trọng tâm bằng tiếng Việt.\n"
       . "Chỉ dùng thông tin trong phần NGUỒN nếu phù hợp. Nếu thiếu dữ liệu, nói rõ là chưa có đủ thông tin thay vì bịa.\n\n"
       . "NGUỒN DỮ LIỆU:\n" . $contextJson . "\n\n"
       . "CÂU HỎI CỦA NGƯỜI DÙNG: " . $question;
@@ -393,12 +387,12 @@ class ChatbotController extends BaseController
     }
   }
 
-  private function getGeminiApiKey()
+  private function getOllamaHost()
   {
-    $apiKey = getenv('GEMINI_API_KEY') ?: ($_ENV['GEMINI_API_KEY'] ?? '');
+    $host = getenv('OLLAMA_HOST') ?: ($_ENV['OLLAMA_HOST'] ?? '');
 
-    if (!empty($apiKey)) {
-      return trim($apiKey);
+    if (!empty($host)) {
+      return trim($host);
     }
 
     $envPath = dirname(__DIR__, 2) . '/.env';
@@ -407,36 +401,32 @@ class ChatbotController extends BaseController
     }
 
     $envValues = parse_ini_file($envPath, false, INI_SCANNER_RAW);
-    if (!is_array($envValues) || empty($envValues['GEMINI_API_KEY'])) {
+    if (!is_array($envValues) || empty($envValues['OLLAMA_HOST'])) {
       return '';
     }
 
-    return trim((string) $envValues['GEMINI_API_KEY'], " \t\n\r\0\x0B\"'");
+    return trim((string) $envValues['OLLAMA_HOST'], " \t\n\r\0\x0B\"'");
   }
 
-  private function getGeminiModelCandidates()
+  private function getOllamaModel()
   {
-    $preferredModel = getenv('GEMINI_MODEL') ?: ($_ENV['GEMINI_MODEL'] ?? '');
-    $candidates = [];
+    $model = getenv('OLLAMA_MODEL') ?: ($_ENV['OLLAMA_MODEL'] ?? '');
 
-    if (!empty($preferredModel)) {
-      $candidates[] = trim($preferredModel);
+    if (!empty($model)) {
+      return trim($model);
     }
 
-    $fallbackModels = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
-    ];
-
-    foreach ($fallbackModels as $model) {
-      if (!in_array($model, $candidates, true)) {
-        $candidates[] = $model;
-      }
+    $envPath = dirname(__DIR__, 2) . '/.env';
+    if (!is_file($envPath)) {
+      return 'qwen2.5:3b-instruct';
     }
 
-    return $candidates;
+    $envValues = parse_ini_file($envPath, false, INI_SCANNER_RAW);
+    if (!is_array($envValues) || empty($envValues['OLLAMA_MODEL'])) {
+      return 'qwen2.5:3b-instruct';
+    }
+
+    return trim((string) $envValues['OLLAMA_MODEL'], " \t\n\r\0\x0B\"'");
   }
 
   private function isAjaxRequest()
