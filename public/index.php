@@ -37,11 +37,16 @@ spl_autoload_register(function ($class) {
 
 // Khởi tạo DB một lần duy nhất
 require_once __DIR__ . '/../config/database.php';
-$db = new Database('sportzone_db');
+require_once __DIR__ . '/../cloud/azure.php';
+// Khởi tạo azure instance nếu có cấu hình
+$cloud = new AzureCloud();
+
+$db = new Database($cloud, 'sportzone_db');
 $pdo = $db->pdo;
 
-$db2 = new Database('chatbot_db');
+$db2 = new Database($cloud, 'chatbot_db');
 $pdo2 = $db2->pdo;
+
 
 // Lấy route từ query string: ?route=products
 $route = isset($_GET['route']) ? trim($_GET['route']) : 'home';
@@ -118,18 +123,18 @@ switch ($route) {
 
     // ---------- 3. SẢN PHẨM (PRODUCTS) ----------
     case 'products':
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->index();
         break;
     case 'product_detail':
         $slug = $_GET['slug'] ?? null;
         $id = $_GET['id'] ?? null;
         $target = $slug ?: $id;
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->detail($target);
         break;
     case 'product_review_store':
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->storeReview();
         break;
 
@@ -214,38 +219,38 @@ switch ($route) {
 
     // --- Admin: Products ---
     case 'admin_products':
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->adminIndex();
         break;
     case 'admin_product_create':
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->create();
         break;
     case 'admin_product_store':
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->store();
         break;
     case 'admin_product_edit':
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->edit($id);
         break;
     case 'admin_product_update':
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->update($id);
         break;
     case 'admin_product_delete':
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->delete($id);
         break;
     case 'admin_product_delete_image':
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->deleteImage();
         break;
     case 'admin_product_set_primary':
-        $ctrl = new ProductController($pdo);
+        $ctrl = new ProductController($pdo, $cloud);
         $ctrl->setPrimaryImage();
         break;
 
@@ -379,4 +384,8 @@ switch ($route) {
         echo '<a href="' . BASE_URL . '/index.php" style="padding: 10px 20px; background: #ff6600; color: #fff; text-decoration: none; border-radius: 5px;">Về trang chủ</a>';
         echo '</div>';
         break;
+}
+
+if ($telemetryClient) {
+    $telemetryClient->flush();
 }

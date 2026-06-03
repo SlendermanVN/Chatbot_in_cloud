@@ -36,7 +36,6 @@ class Chatbot
     return $stmt->execute($data);
   }
 
-
   public function getKnowledgeBase()
   {
     $stmt = $this->pdo->query("SELECT keyword, response_text FROM bot_knowledge_base");

@@ -3,17 +3,23 @@ require_once __DIR__ . '/BaseController.php';
 require_once __DIR__ . '/../Models/Product.php';
 require_once __DIR__ . '/../Models/Review.php';
 
+require_once __DIR__ . '/../Classes/HttpClient.php';
+
 class ProductController extends BaseController
 {
     //TODO Văn Phát: Xử lý hiển thị danh sách sản phẩm, chi tiết sản phẩm, và CRUD cho admin
     private $productModel;
+    private $reviewModel;
+    private $azureBlobStorage;
+    private $containerName = 'sportzoneimage';
 
-    public function __construct($pdo)
+    public function __construct($pdo, $cloud)
     {
         parent::__construct($pdo);
         $this->productModel = new Product($pdo);
         $this->settingModel = new Setting($pdo);
-        $this->reviewModel  = new Review($pdo);
+        $this->reviewModel = new Review($pdo);
+        $this->azureBlobStorage = $cloud->BlobStorage();
     }
 
     // ============================================================
@@ -29,10 +35,10 @@ class ProductController extends BaseController
         $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
         $limit = 12;
         $offset = ($page - 1) * $limit;
-        
+
         // Sửa lỗi: View gửi name="search"
         $keyword = isset($_GET['search']) ? trim(htmlspecialchars($_GET['search'])) : '';
-        
+
         // Sửa lỗi: View gửi name="categories[]" (array)
         $categoryIds = isset($_GET['categories']) && is_array($_GET['categories']) ? array_map('intval', $_GET['categories']) : null;
 
@@ -65,7 +71,7 @@ class ProductController extends BaseController
         // Ưu tiên tìm theo Slug nếu đầu vào không phải là số thuần túy (hoặc có param slug)
         // Tuy nhiên router đang truyền $id từ $_GET['id']. 
         // Ta sẽ đổi router để truyền cả 2 hoặc ưu tiên slug.
-        
+
         $product = null;
         if (is_numeric($idOrSlug)) {
             $product = $this->productModel->getById($idOrSlug);
@@ -78,7 +84,7 @@ class ProductController extends BaseController
             $this->render('404', [], '404 - Không tìm thấy');
             return;
         }
-        
+
         $id = $product['id'];
 
         // Kiểm tra SP đã trong giỏ chưa (nếu đã login)
@@ -120,9 +126,9 @@ class ProductController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->verifyCsrf();
 
-            $productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
-            $rating    = isset($_POST['rating']) ? (int)$_POST['rating'] : 5;
-            $content   = isset($_POST['content']) ? trim(htmlspecialchars($_POST['content'])) : '';
+            $productId = isset($_POST['product_id']) ? (int) $_POST['product_id'] : 0;
+            $rating = isset($_POST['rating']) ? (int) $_POST['rating'] : 5;
+            $content = isset($_POST['content']) ? trim(htmlspecialchars($_POST['content'])) : '';
 
             if ($productId <= 0 || empty($content)) {
                 $this->redirectWithMessage('product_detail&id=' . $productId, 'error', 'Vui lòng nhập nội dung đánh giá.');
@@ -150,7 +156,7 @@ class ProductController extends BaseController
     {
         $this->requireAdmin();
 
-        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
         $limit = 15;
         $offset = ($page - 1) * $limit;
         $keyword = isset($_GET['keyword']) ? trim(htmlspecialchars($_GET['keyword'])) : '';
@@ -362,6 +368,36 @@ class ProductController extends BaseController
             return;
         }
 
+        $product = $this->productModel->getByIdForAdmin($id);
+        if (!$product) {
+            $this->redirectWithMessage('admin_products', 'error', 'Sản phẩm không tồn tại.');
+            return;
+        }
+
+        $imagePath = $product['image_path'] ?? null;
+        if ($imagePath) {
+            try {
+                $date = gmdate('D, d M Y H:i:s \G\M\T');
+                $url = "https://{$this->azureBlobStorage->accountName}.blob.core.windows.net/{$this->containerName}/{$imagePath}";
+
+                $canonicalizedHeaders = "x-ms-date:{$date}\nx-ms-version:2021-08-06";
+                $canonicalizedResource = "/{$this->azureBlobStorage->accountName}/{$this->containerName}/{$imagePath}";
+
+                $stringToSign = "DELETE\n\n\n\n\n\n\n\n\n\n\n\n{$canonicalizedHeaders}\n{$canonicalizedHeaders}\n{$canonicalizedResource}";
+                $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($this->azureBlobStorage->accountKey), true));
+
+                $headers = [
+                    'x-ms-date' => $date,
+                    'x-ms-version' => '2021-08-06',
+                    'Authorization' => "SharedKey {$this->azureBlobStorage->accountName}:{$signature}"
+                ];
+
+                HttpClient::request('DELETE', $url, [], $headers, 10);
+            } catch (Exception $e) {
+                error_log("Lỗi xóa ảnh từ Azure Blob Storage: " . $e->getMessage());
+            }
+        }
+
         $this->productModel->delete($id);
         $this->redirectWithMessage('admin_products', 'success', 'Đã ẩn sản phẩm thành công.');
     }
@@ -379,12 +415,12 @@ class ProductController extends BaseController
     {
         $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         $maxSize = 5 * 1024 * 1024; // 5MB
-        $uploadDir = __DIR__ . '/../../public/uploads/products/';
+        $uploadDir = 'products/'; // Thư mục con trong Azure Blob Storage
         $saved = [];
 
-        // Tạo thư mục nếu chưa có
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+        // Kiểm tra kết nối Azure Blob Storage     
+        if (!$this->azureBlobStorage) {
+            throw new Exception("Không thể kết nối Azure Blob Storage. Vui lòng kiểm tra cấu hình.");
         }
 
         // $_FILES['images'] khi multiple: name là array
@@ -400,6 +436,7 @@ class ProductController extends BaseController
             $mimeType = finfo_file($finfo, $files['tmp_name'][$i]);
             finfo_close($finfo);
 
+
             if (!in_array($mimeType, $allowedTypes))
                 continue;
 
@@ -408,8 +445,39 @@ class ProductController extends BaseController
             $newName = 'product_' . $productId . '_' . time() . '_' . $i . '.' . $ext;
             $dest = $uploadDir . $newName;
 
+            // Thêm bước đọc file thành binary data để upload lên Azure Blob Storage
+            try {
+
+                $binaryData = file_get_contents($files['tmp_name'][$i]);
+                $date = gmdate('D, d M Y H:i:s \G\M\T');
+
+                // Xây dựng chuỗi ký tên xác thực theo yêu cầu của Azure Blob Storage
+                $canonicalizedHeaders = "x-ms-blob-type:BlockBlob\nx-ms-date:{$date}\nx-ms-version:2021-08-06";
+                $canonicalizedResource = "/{$this->azureBlobStorage->accountName}/{$this->containerName}/{$dest}";
+
+                $stringToSign = "PUT\n\n\n{$files['size'][$i]}\n\n{$mimeType}\n\n\n\n\n\n\n{$canonicalizedHeaders}\n{$canonicalizedResource}";
+                $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($this->azureBlobStorage->accountKey), true));
+
+                $url = "https://{$this->azureBlobStorage->accountName}.blob.core.windows.net/{$this->containerName}/{$dest}";
+
+                $headers = [
+                    "Authorization: SharedKey {$this->azureBlobStorage->accountName}:{$signature}",
+                    "x-ms-blob-type: BlockBlob",
+                    "x-ms-date: {$date}",
+                    "x-ms-version: 2021-08-06",
+                    "Content-Type: {$mimeType}",
+                    "Content-Length: {$files['size'][$i]}"
+                ];
+
+                HttpClient::request('PUT', $url, $binaryData, $headers, 20);
+            } catch (Exception $e) {
+                // Log lỗi chi tiết để debug
+                error_log("Lỗi upload ảnh lên Azure Blob Storage: " . $e->getMessage());
+                continue; // Bỏ qua file này và tiếp tục với file tiếp theo
+            }
+
             if (move_uploaded_file($files['tmp_name'][$i], $dest)) {
-                $saved[] = 'uploads/products/' . $newName;
+                $saved[] = 'products/' . $newName;
             }
         }
 
@@ -418,8 +486,8 @@ class ProductController extends BaseController
     public function deleteImage()
     {
         $this->requireAdmin();
-        $imageId = (int)($_POST['image_id'] ?? 0);
-        $productId = (int)($_POST['product_id'] ?? 0);
+        $imageId = (int) ($_POST['image_id'] ?? 0);
+        $productId = (int) ($_POST['product_id'] ?? 0);
 
         if ($imageId && $productId) {
             $submittedToken = $_POST['csrf_token'] ?? '';
@@ -430,12 +498,35 @@ class ProductController extends BaseController
 
             $image = $this->productModel->getImageById($imageId);
             if ($image) {
-                $filePath = __DIR__ . '/../../public/' . $image['image_path'];
-                if (file_exists($filePath)) {
-                    @unlink($filePath);
-                }
+                $filePath = $image['image_path'];
                 $this->productModel->deleteImage($imageId, $productId);
                 $this->redirectWithMessage('admin_product_edit&id=' . $productId, 'success', 'Đã xóa ảnh thành công!');
+
+                if (empty($filePath)) {
+                    error_log("Ảnh sản phẩm ID {$imageId} không có đường dẫn lưu trữ.");
+                    return;
+                }
+
+                try {
+                    $date = gmdate('D, d M Y H:i:s \G\M\T');
+                    $url = "https://{$this->azureBlobStorage->accountName}.blob.core.windows.net/{$this->containerName}/{$filePath}";
+
+                    $canonicalizedHeaders = "x-ms-date:{$date}\nx-ms-version:2021-08-06";
+                    $canonicalizedResource = "/{$this->azureBlobStorage->accountName}/{$this->containerName}/{$filePath}";
+
+                    $stringToSign = "DELETE\n\n\n\n\n\n\n\n\n\n\n\n{$canonicalizedHeaders}\n{$canonicalizedResource}";
+                    $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($this->azureBlobStorage->accountKey), true));
+
+                    $headers = [
+                        "Authorization: SharedKey {$this->azureBlobStorage->accountName}:{$signature}",
+                        "x-ms-date: {$date}",
+                        "x-ms-version: 2021-08-06"
+                    ];
+
+                    HttpClient::request('DELETE', $url, [], $headers, 10);
+                } catch (Exception $e) {
+                    error_log("Lỗi xóa ảnh từ Azure Blob Storage: " . $e->getMessage());
+                }
                 return;
             }
         }
@@ -445,8 +536,8 @@ class ProductController extends BaseController
     public function setPrimaryImage()
     {
         $this->requireAdmin();
-        $imageId = (int)($_POST['image_id'] ?? 0);
-        $productId = (int)($_POST['product_id'] ?? 0);
+        $imageId = (int) ($_POST['image_id'] ?? 0);
+        $productId = (int) ($_POST['product_id'] ?? 0);
 
         if ($imageId && $productId) {
             $submittedToken = $_POST['csrf_token'] ?? '';

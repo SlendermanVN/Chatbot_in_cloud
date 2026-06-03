@@ -1,9 +1,16 @@
 <?php
-function productBadge($isActive) {
+function productBadge($isActive)
+{
     if ($isActive) {
         return '<span class="sz-badge sz-badge-success"><i class="fa-solid fa-circle-check"></i> Hoạt động</span>';
     }
     return '<span class="sz-badge sz-badge-secondary"><i class="fa-solid fa-eye-slash"></i> Đã ẩn</span>';
+}
+
+function getImageFromAzure($imagePath)
+{
+    $azureBaseUrl = 'https://your-azure-storage.blob.core.windows.net/your-container/';
+    return $azureBaseUrl . ltrim($imagePath, '/');
 }
 ?>
 
@@ -23,7 +30,7 @@ function productBadge($isActive) {
         <div class="sz-input-icon">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" name="keyword" value="<?= htmlspecialchars($keyword ?? '') ?>"
-                   placeholder="Tìm theo tên, SKU..." class="sz-input">
+                placeholder="Tìm theo tên, SKU..." class="sz-input">
         </div>
         <button class="sz-btn sz-btn-primary" type="submit">Tìm kiếm</button>
         <?php if (!empty($keyword)): ?>
@@ -57,8 +64,8 @@ function productBadge($isActive) {
                             <td>
                                 <div class="sz-product-cell">
                                     <?php if (!empty($p['primary_image'])): ?>
-                                        <img src="<?= BASE_URL ?>/<?= htmlspecialchars($p['primary_image']) ?>"
-                                             alt="<?= htmlspecialchars($p['name']) ?>" class="sz-product-thumb">
+                                        <img src="<?= getImageFromAzure($p['primary_image']) ?>"
+                                            alt="<?= htmlspecialchars($p['name']) ?>" class="sz-product-thumb">
                                     <?php else: ?>
                                         <div class="sz-product-thumb sz-no-img">
                                             <i class="fa-solid fa-image"></i>
@@ -101,12 +108,14 @@ function productBadge($isActive) {
                             <td>
                                 <div class="sz-action-group">
                                     <a href="<?= BASE_URL ?>/index.php?route=admin_product_edit&id=<?= $p['id'] ?>"
-                                       class="sz-action-btn sz-action-edit" title="Chỉnh sửa">
+                                        class="sz-action-btn sz-action-edit" title="Chỉnh sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
                                     <?php if ($p['is_active']): ?>
-                                        <form action="<?= BASE_URL ?>/index.php?route=admin_product_delete&id=<?= $p['id'] ?>" method="POST" class="d-inline" onsubmit="return confirm('Ẩn sản phẩm này?');">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                        <form action="<?= BASE_URL ?>/index.php?route=admin_product_delete&id=<?= $p['id'] ?>"
+                                            method="POST" class="d-inline" onsubmit="return confirm('Ẩn sản phẩm này?');">
+                                            <input type="hidden" name="csrf_token"
+                                                value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                             <button type="submit" class="sz-action-btn sz-action-delete" title="Ẩn sản phẩm">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
@@ -122,7 +131,8 @@ function productBadge($isActive) {
                             <div class="sz-empty-state">
                                 <i class="fa-solid fa-box-open"></i>
                                 <h5>Không tìm thấy sản phẩm nào</h5>
-                                <p><?= !empty($keyword) ? 'Thử tìm với từ khóa khác.' : 'Bắt đầu thêm sản phẩm đầu tiên!' ?></p>
+                                <p><?= !empty($keyword) ? 'Thử tìm với từ khóa khác.' : 'Bắt đầu thêm sản phẩm đầu tiên!' ?>
+                                </p>
                             </div>
                         </td>
                     </tr>
@@ -138,7 +148,7 @@ function productBadge($isActive) {
             <div class="sz-pagination-links">
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                     <a href="<?= BASE_URL ?>/index.php?route=admin_products&page=<?= $i ?>&keyword=<?= urlencode($keyword ?? '') ?>"
-                       class="sz-page-link <?= $i == $page ? 'active' : '' ?>">
+                        class="sz-page-link <?= $i == $page ? 'active' : '' ?>">
                         <?= $i ?>
                     </a>
                 <?php endfor; ?>

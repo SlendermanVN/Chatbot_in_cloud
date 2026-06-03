@@ -21,6 +21,7 @@ SET FOREIGN_KEY_CHECKS
 SET SQL_MODE
 = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
+SET SQL_SAFE_UPDATES = 0;
 -- =============================================================
 -- 1. USERS
 -- =============================================================
@@ -999,7 +1000,6 @@ USE sportzone_db;
 SET FOREIGN_KEY_CHECKS = 0;
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
-
 -- Xóa data cũ (nếu import lại) để tránh lỗi trùng lặp
 DELETE FROM reviews;
 DELETE FROM order_items;
@@ -1016,7 +1016,6 @@ DELETE FROM contacts;
 DELETE FROM pages;
 DELETE FROM site_settings;
 DELETE FROM users;
-
 -- =============================================================
 -- USERS (Đã fix mật khẩu dài hơn 8 ký tự: password123)
 -- Mã Hash Bcrypt của chữ 'password123' là '$2y$10$nOUIs5kJ7naTuTFkBy1veuK0kSxUFXfuaOKdOKf9xYT0KKIGSJwFa'
@@ -1297,5 +1296,20 @@ CREATE TABLE bot_knowledge_base (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng tri thức của bot, chứa các cặp từ khóa và câu trả lời để bot có thể phản hồi nhanh dựa trên từ khóa';
 
 -- Bật lại kiểm tra khóa ngoại sau khi cấu trúc được dựng xong
-SET FOREIGN_KEY_CHECKS = 1;G R A N T   A L L   P R I V I L E G E S   O N   c h a t b o t _ d b . *   T O   ' s p o r t z o n e ' @ ' % ' ;   F L U S H   P R I V I L E G E S ;  
- 
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE DATABASE IF NOT EXISTS chatbot_db;
+-- Hãy thay 'MatKhauSieuManh_2026!' bằng mật khẩu thực tế của bạn
+CREATE USER IF NOT EXISTS 'sportzone'@'%' IDENTIFIED BY 'Password123!';
+
+-- Bước 2: Cấp quyền quản trị toàn bộ trên database 'sportzone_db'
+GRANT ALL PRIVILEGES ON sportzone_db.* TO 'sportzone'@'%';
+
+-- Bước 3: Cấp thêm quyền quản trị toàn bộ trên database 'chatbot_db' cho cùng user đó
+GRANT ALL PRIVILEGES ON chatbot_db.* TO 'sportzone'@'%';
+
+-- Bước 4: Áp dụng các thay đổi quyền ngay lập tức
+FLUSH PRIVILEGES;
+
+
+SET SQL_SAFE_UPDATES = 1;

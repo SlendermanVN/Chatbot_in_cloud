@@ -1,6 +1,7 @@
 <?php
 class Database
 {
+    private $cloud_database;
     private $host;
     private $user;
     private $pass;
@@ -8,11 +9,12 @@ class Database
     private $port;
     public $pdo;
 
-    public function __construct($db)
+    public function __construct($cloud, $db)
     {
-        $this->host = getenv('DB_HOST') ?: 'localhost';
-        $this->user = getenv('DB_USER') ?: 'root';
-        $this->pass = getenv('DB_PASS') ?: '';
+        $this->cloud_database = $cloud->MySQLDatabase();
+        $this->host = $this->cloud_database['host'] ?: 'localhost';
+        $this->user = $this->cloud_database['user'] ?: 'root';
+        $this->pass = $this->cloud_database['password'] ?: '';
         $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
         $this->port = getenv('DB_PORT') ?: '3306';
 
