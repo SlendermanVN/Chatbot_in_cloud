@@ -19,7 +19,7 @@ class Database
         $this->pass = $this->cloud_database['password'] ?: '';
         $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
         $this->port = getenv('DB_PORT') ?: '3306';
-        $this->certificate = getenv('AZURE_MYSQL_CERTIFICATE') ?: null;
+        $this->certificate = $this->cloud_database['certificate'] ?: null;
 
         $dsn = "mysql:host={$this->host};port={$this->port};dbname={$db};charset={$this->charset}";
         $options = [

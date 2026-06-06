@@ -19,13 +19,13 @@ class AzureCLoud
   {
     $data = [
       'host' => getenv('AZURE_MYSQL_HOST'),
-      'username' => getenv('AZURE_MYSQL_USERNAME'),
+      'user' => getenv('AZURE_MYSQL_USERNAME'),
       'password' => getenv('AZURE_MYSQL_PASSWORD'),
       'certificate' => getenv('AZURE_MYSQL_CERTIFICATE'),
     ];
 
-    if (empty($data['host']) || empty($data['username']) || empty($data['password'])) {
-      throw new Exception("Azure MySQL Database configuration is missing. Please set AZURE_MYSQL_HOST, AZURE_MYSQL_USERNAME, and AZURE_MYSQL_PASSWORD environment variables.");
+    if (empty($data['host']) || empty($data['user']) || empty($data['password']) || empty($data['certificate'])) {
+      throw new Exception("Azure MySQL Database configuration is missing. Please set AZURE_MYSQL_HOST, AZURE_MYSQL_USERNAME, AZURE_MYSQL_PASSWORD, and AZURE_MYSQL_CERTIFICATE environment variables.");
     }
 
     return $data;
