@@ -19,7 +19,7 @@ class Database
         $this->pass = $this->cloud_database['password'] ?: '';
         $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
         $this->port = getenv('DB_PORT') ?: '3306';
-        $this->certificate = $this->cloud_database['certificate'] ?? 'certs/ca.pem'; // Đường dẫn mặc định đến file chứng chỉ SSL
+        $this->certificate = getenv('AZURE_MYSQL_CERTIFICATE') ?: null;
 
         $dsn = "mysql:host={$this->host};port={$this->port};dbname={$db};charset={$this->charset}";
         $options = [
