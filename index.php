@@ -16,16 +16,16 @@ header('Content-Type: text/html; charset=utf-8');
 
 // Định nghĩa Hằng số gốc (Rất quan trọng cho file View/Header/Footer)
 if (!defined('BASE_URL')) {
-    $baseUrl = getenv('BASE_URL') ?: '/main-repo/public';
+    $baseUrl = getenv('BASE_URL') ?: '';
     define('BASE_URL', rtrim($baseUrl, '/'));
 }
 
 // Autoload: tự động require class khi cần
 spl_autoload_register(function ($class) {
     $paths = [
-        __DIR__ . '/../app/Controllers/' . $class . '.php',
-        __DIR__ . '/../app/Controllers/Admin/' . $class . '.php',
-        __DIR__ . '/../app/Models/' . $class . '.php',
+        __DIR__ . '/app/Controllers/' . $class . '.php',
+        __DIR__ . '/app/Controllers/Admin/' . $class . '.php',
+        __DIR__ . '/app/Models/' . $class . '.php',
     ];
     foreach ($paths as $path) {
         if (file_exists($path)) {
@@ -36,8 +36,8 @@ spl_autoload_register(function ($class) {
 });
 
 // Khởi tạo DB một lần duy nhất
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../cloud/azure.php';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/cloud/azure.php';
 // Khởi tạo azure instance nếu có cấu hình
 $cloud = new AzureCloud();
 
