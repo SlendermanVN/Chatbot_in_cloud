@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../app/Models/Product.php';
-require_once __DIR__ . '/../app/Models/News.php';
+require_once __DIR__ . '/../Models/Product.php';
+require_once __DIR__ . '/../Models/News.php';
 
 require_once __DIR__ . '/BaseController.php';
 
