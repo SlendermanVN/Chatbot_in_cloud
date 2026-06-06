@@ -14,7 +14,7 @@ fi
 nginx -t
 if [ $? -eq 0 ]; then
     echo "Cú pháp Nginx chuẩn xác. Đang khởi động lại dịch vụ..."
-    service nginx restart
+    service nginx reload
 else
     echo "LỖI: Cú pháp Nginx bị sai. Hủy bỏ."
     exit 1
