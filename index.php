@@ -8,8 +8,10 @@
 </head>
 
 <body>
-  <h1>Welcome to my website</h1>
-  <p>This is a simple PHP website.</p>
+  <h1>PHP Test</h1>
+  <?php
+  echo "Hello, World!";
+  ?>
 </body>
 
 </html>
