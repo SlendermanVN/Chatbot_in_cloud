@@ -9,6 +9,8 @@ class Database
     private $port;
     public $pdo;
 
+    private $certificate;
+
     public function __construct($cloud, $db)
     {
         $this->cloud_database = $cloud->MySQLDatabase();
@@ -17,12 +19,17 @@ class Database
         $this->pass = $this->cloud_database['password'] ?: '';
         $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
         $this->port = getenv('DB_PORT') ?: '3306';
+        $this->certificate = $this->cloud_database['certificate'] ?? 'certs/ca.pem'; // Đường dẫn mặc định đến file chứng chỉ SSL
 
         $dsn = "mysql:host={$this->host};port={$this->port};dbname={$db};charset={$this->charset}";
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,   // Throw exception khi lỗi SQL
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,         // Fetch array kiểu key=>value
             PDO::ATTR_EMULATE_PREPARES => false,                    // Dùng prepared statement thật (chống SQL Injection)
+
+            // Đính kèm cấu hình SSL
+            PDO::MYSQL_ATTR_SSL_CA => $this->certificate, // Đường dẫn đến file chứng chỉ SSL (nếu có)
+            PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true, // Bật xác thực chứng chỉ máy chủ
         ];
         try {
             $this->pdo = new PDO($dsn, $this->user, $this->pass, $options);
