@@ -394,15 +394,7 @@ try {
             echo '</div>';
             break;
     }
-
-    if ($telemetryClient) {
-        $telemetryClient->flush();
-    }
 } catch (Exception $e) {
-    if ($telemetryClient) {
-        $telemetryClient->trackException($e);
-        $telemetryClient->flush();
-    }
     http_response_code(500);
     echo '<div style="text-align: center; margin-top: 50px; font-family: sans-serif;">';
     echo '<h1 style="color: #ff6600; font-size: 50px;">500</h1>';
