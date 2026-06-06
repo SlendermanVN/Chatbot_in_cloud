@@ -1,6 +1,6 @@
 <?php
-require_once '../app/Models/Product.php';
-require_once '../app/Models/News.php';
+require_once __DIR__ . '/../app/Models/Product.php';
+require_once __DIR__ . '/../app/Models/News.php';
 
 require_once __DIR__ . '/BaseController.php';
 
@@ -25,17 +25,17 @@ class HomeController extends BaseController
         }
 
         // 2. Lấy dữ liệu chung cho tất cả mọi người (Guest & Member)
-        $rawSettings    = $this->settingModel->getAll();
-        $settings       = array_column($rawSettings, 'setting_value', 'setting_key');
-        $topCategories  = $this->productModel->getTopCategories(4);
-        $latestProducts = $this->productModel->getAll(8, 0); 
-        $latestNews     = $this->newsModel->getAll(3, 0, true);
+        $rawSettings = $this->settingModel->getAll();
+        $settings = array_column($rawSettings, 'setting_value', 'setting_key');
+        $topCategories = $this->productModel->getTopCategories(4);
+        $latestProducts = $this->productModel->getAll(8, 0);
+        $latestNews = $this->newsModel->getAll(3, 0, true);
 
         $data = [
-            'setting'        => $settings,
-            'topCategories'  => $topCategories,
+            'setting' => $settings,
+            'topCategories' => $topCategories,
             'latestProducts' => $latestProducts,
-            'latestNews'     => $latestNews,
+            'latestNews' => $latestNews,
         ];
 
         // 3. Render trang chủ chung (Header sẽ tự xử lý hiển thị Guest/Member)

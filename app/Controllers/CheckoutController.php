@@ -112,7 +112,7 @@ class CheckoutController extends BaseController
         // ---- Tạo đơn hàng qua OrderModel ----
         try {
             $total = $this->cartModel->getTotal($userId);
-            
+
             // Tạo customer_order và order_items, đồng thời xóa giỏ hàng
             $orderId = $this->orderModel->createOrder(
                 $userId,
