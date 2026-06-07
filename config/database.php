@@ -23,13 +23,13 @@ class Database
 
         $dsn = "mysql:host={$this->host};port={$this->port};dbname={$db};charset={$this->charset}";
         $options = [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,   // Throw exception khi lỗi SQL
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,         // Fetch array kiểu key=>value
-            PDO::ATTR_EMULATE_PREPARES => false,                    // Dùng prepared statement thật (chống SQL Injection)
+            Pdo\Mysql::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,   // Throw exception khi lỗi SQL
+            Pdo\Mysql::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,         // Fetch array kiểu key=>value
+            Pdo\Mysql::ATTR_EMULATE_PREPARES => false,                    // Dùng prepared statement thật (chống SQL Injection)
 
             // Đính kèm cấu hình SSL
-            PDO::MYSQL_ATTR_SSL_CA => $this->certificate, // Đường dẫn đến file chứng chỉ SSL (nếu có)
-            PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true, // Bật xác thực chứng chỉ máy chủ
+            Pdo\Mysql::MYSQL_ATTR_SSL_CA => $this->certificate, // Đường dẫn đến file chứng chỉ SSL (nếu có)
+            Pdo\Mysql::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true, // Bật xác thực chứng chỉ máy chủ
         ];
         try {
             $this->pdo = new PDO($dsn, $this->user, $this->pass, $options);

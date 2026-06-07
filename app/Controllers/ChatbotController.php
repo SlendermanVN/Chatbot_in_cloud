@@ -10,8 +10,6 @@ require_once __DIR__ . "/../Models/News.php";
 
 require_once __DIR__ . "/../Classes/HttpClient.php";
 
-header('Content-Type: application/json; charset=utf-8');
-
 class ChatbotController extends BaseController
 {
   // Models
