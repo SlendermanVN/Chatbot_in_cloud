@@ -10,7 +10,7 @@ function formatPrice($price)
     return number_format($price, 0, ',', '.') . ' VNĐ';
 }
 
-function getImageFromAzure($imagePath)
+function getImageFromAzure($imagePath, $azure = [])
 {
     $azureBaseUrl = 'https://' . $azure['account_name'] . '.blob.core.windows.net/' . $azure['container_name'] . '/';
     return $azureBaseUrl . ltrim($imagePath, '/');
@@ -52,10 +52,10 @@ function renderBrandItemCheckbox($list)
     }
 }
 
-function renderProductCard($product)
+function renderProductCard($product, $azure = [])
 {
     $imgSrc = !empty($product['primary_image'])
-        ? getImageFromAzure($product['primary_image'])
+        ? getImageFromAzure($product['primary_image'], $azure)
         : BASE_URL . '/images/no-image.png';
     ?>
     <div

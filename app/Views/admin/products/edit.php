@@ -2,7 +2,7 @@
 
 $azure = $data['azure'];
 
-function getImageFromAzure($imagePath)
+function getImageFromAzure($imagePath, $azure = [])
 {
     $azureBaseUrl = 'https://' . $azure['account_name'] . '.blob.core.windows.net/' . $azure['container_name'] . '/';
     return $azureBaseUrl . ltrim($imagePath, '/');
@@ -120,8 +120,8 @@ function getImageFromAzure($imagePath)
                                             <div class="col-3 p-1">
                                                 <div class="position-relative border rounded bg-light"
                                                     style="padding-bottom: 100%; overflow: hidden;">
-                                                    <img src="<?= getImageFromAzure($img['image_path']) ?>" alt="Ảnh sản phẩm"
-                                                        class="position-absolute"
+                                                    <img src="<?= getImageFromAzure($img['image_path'], $azure) ?>"
+                                                        alt="Ảnh sản phẩm" class="position-absolute"
                                                         style="width: 100%; height: 100%; object-fit: cover;">
 
                                                     <!-- Nút Xóa (Dấu X) -->

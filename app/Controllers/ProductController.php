@@ -47,8 +47,11 @@ class ProductController extends BaseController
         $totalPages = ceil($total / $limit);
         $categories = $this->productModel->getCategories();
 
-        $azure = $this->azureBlobStorage;
-        $azure += ['container_name' => $this->containerName];
+        $azure = [
+            'account_name' => $this->azureBlobStorage['account_name'],
+            'account_key' => $this->azureBlobStorage['account_key'],
+            'container_name' => $this->containerName,
+        ];
 
         $rawSettings = $this->settingModel->getAll();
         $setting = array_column($rawSettings, 'setting_value', 'setting_key');
