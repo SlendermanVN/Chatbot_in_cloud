@@ -214,9 +214,12 @@ try {
 
         // ---------- 6. Chatbot ----------
         case 'ask_chatbot':
-            $userInput = $_POST['chatbot-form'] ?? '';
+            ob_clean();
+
             $ctrl = new ChatbotController($pdo, $pdo2);
-            $ctrl->askChatbot($userInput);
+            $ctrl->askChatbot();
+
+            ob_end_flush();
             break;
 
         // ============================================================

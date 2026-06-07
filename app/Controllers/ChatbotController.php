@@ -79,7 +79,7 @@ class ChatbotController extends BaseController
     ];
   }
 
-  public function askChatbot($userPrompt)
+  public function askChatbot()
   {
     $this->requireLogin();
 
@@ -89,12 +89,12 @@ class ChatbotController extends BaseController
 
     try {
       $inputData = json_decode(file_get_contents('php://input'), true);
-      $currentUserPrompt = isset($inputData['prompt']) ? trim($inputData['prompt']) : $userPrompt;
+      $currentUserPrompt = isset($inputData['prompt']) ? trim($inputData['prompt']) : '';
 
       if (empty($currentUserPrompt)) {
         http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Câu hỏi không được để trống. Vui lòng nhập câu hỏi của bạn.']);
-        return;
+        echo json_encode(['status' => 'error', 'message' => 'Câu hỏi không được để trống. Vui lòng nhập câu hỏi của bạn.'], JSON_UNESCAPED_UNICODE);
+        exit();
       }
 
       $chatbotId = $this->chatbotModel->getChatSessionId($this->userId, $this->sessionToken);
@@ -176,11 +176,13 @@ class ChatbotController extends BaseController
       $contentPayload = [];
       $chatHistory = $this->getHistory();
 
-      foreach ($chatHistory as $message) {
-        $contentPayload[] = [
-          'role' => $message['role'],
-          'content' => $message['content']
-        ];
+      if (is_array($chatHistory)) {
+        foreach ($chatHistory as $message) {
+          $contentPayload[] = [
+            'role' => $message['role'],
+            'parts' => [['text' => $message['content']]]
+          ];
+        }
       }
 
       $groundingContext = "[DỮ LIỆU HỆ THỐNG THỜI GIAN THỰC]\n";
@@ -203,22 +205,21 @@ class ChatbotController extends BaseController
         "contents" => $contentsPayload
       ];
 
-      $urlWithKey = $this->geminiUrl . "?key=" . $this->geminiApiKey;
-      $rawResponse = HttpClient::request("POST", $urlWithKey, $payload, [
+      $rawResponse = HttpClient::request("POST", $this->geminiUrl, $payload, [
         "Content-Type" => "application/json"
       ], 30);
 
       $responseArray = json_decode($rawResponse, true);
       $botReply = $responseArray['candidates'][0]['content']['parts'][0]['text'] ?? 'Trợ lý không thể xử lý câu hỏi này.';
 
-      http_response_code(200);
-      echo json_encode(['status' => 'success', 'message' => $botReply]);
-
       $this->chatbotModel->addChatMessage([$chatbotId, $botReply, 'bot']);
+
+      http_response_code(200);
+      echo json_encode(['status' => 'success', 'message' => $botReply], JSON_UNESCAPED_UNICODE);
 
     } catch (Exception $e) {
       http_response_code(500);
-      echo json_encode(['status' => 'error', 'message' => 'Đã xảy ra lỗi khi xử lý câu hỏi: ' . $e->getMessage()]);
+      echo json_encode(['status' => 'error', 'message' => 'Đã xảy ra lỗi khi xử lý câu hỏi: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     }
   }
 
