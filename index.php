@@ -214,10 +214,8 @@ try {
 
         // ---------- 6. Chatbot ----------
         case 'ask_chatbot':
-
             $ctrl = new ChatbotController($pdo, $pdo2);
             $ctrl->askChatbot();
-
             break;
 
         // ============================================================

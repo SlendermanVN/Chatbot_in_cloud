@@ -23,8 +23,8 @@ class Database
 
         $dsn = "mysql:host={$this->host};port={$this->port};dbname={$db};charset={$this->charset}";
         $options = [
-            Pdo\Mysql::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,   // Throw exception khi lỗi SQL
-            Pdo\Mysql::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,         // Fetch array kiểu key=>value
+            Pdo\Mysql::ATTR_ERRMODE => Pdo\Mysql::ERRMODE_EXCEPTION,   // Throw exception khi lỗi SQL
+            Pdo\Mysql::ATTR_DEFAULT_FETCH_MODE => Pdo\Mysql::FETCH_ASSOC,         // Fetch array kiểu key=>value
             Pdo\Mysql::ATTR_EMULATE_PREPARES => false,                    // Dùng prepared statement thật (chống SQL Injection)
 
             // Đính kèm cấu hình SSL
