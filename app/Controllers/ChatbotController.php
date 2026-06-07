@@ -187,7 +187,7 @@ class ChatbotController extends BaseController
       $groundingContext .= "- Tên khách hàng: " . $input['Thông tin người dùng']['name'] . "\n";
       $groundingContext .= "[CÂU HỎI HIỆN TẠI]: " . $currentUserPrompt . "\n";
 
-      $contentsPayload[] = [
+      $contentPayload[] = [
         "role" => "user",
         "parts" => [
           [
@@ -200,7 +200,7 @@ class ChatbotController extends BaseController
         "systemInstruction" => [
           "parts" => ["text" => $developerSystemInstruction]
         ],
-        "contents" => $contentsPayload
+        "contents" => $contentPayload
       ];
 
       $rawResponse = HttpClient::request("POST", $this->geminiUrl, $payload, [

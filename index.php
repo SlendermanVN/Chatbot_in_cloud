@@ -214,12 +214,10 @@ try {
 
         // ---------- 6. Chatbot ----------
         case 'ask_chatbot':
-            ob_clean();
 
             $ctrl = new ChatbotController($pdo, $pdo2);
             $ctrl->askChatbot();
 
-            ob_end_flush();
             break;
 
         // ============================================================
