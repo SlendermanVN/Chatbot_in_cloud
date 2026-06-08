@@ -96,7 +96,11 @@ class ChatbotController extends BaseController
       }
 
       $chatbotId = $this->chatbotModel->getChatSessionId($this->userId, $this->sessionToken);
-      $this->chatbotModel->addChatMessage([$chatbotId, $currentUserPrompt, 'user']);
+      $this->chatbotModel->addChatMessage([
+        'chatbot_id' => $chatbotId,
+        'message_text' => $currentUserPrompt,
+        'sender' => 'user'
+      ]);
 
       $input = $this->getInput();
 
@@ -176,15 +180,26 @@ class ChatbotController extends BaseController
 
       if (is_array($chatHistory)) {
         foreach ($chatHistory as $message) {
+          $rawSender = strtolower($message['sender'] ?? 'user');
+          $role = ($rawSender === 'bot' || $rawSender === 'model') ? 'model' : 'user';
+          $text = $message['message_text'] ?? '';
+
+          if (empty($text)) {
+            continue;
+          }
+
           $contentPayload[] = [
             'role' => $message['role'],
-            'parts' => [['text' => $message['content']]]
+            'parts' => [['text' => $message['contents']]]
           ];
         }
       }
 
+      $clientInfo = $input['Thông tin người dùng'] ?? [];
+      $customerName = $clientInfo['full_name'] ?? ($clientInfo['username'] ?? 'Khách hàng');
+
       $groundingContext = "[DỮ LIỆU HỆ THỐNG THỜI GIAN THỰC]\n";
-      $groundingContext .= "- Tên khách hàng: " . $input['Thông tin người dùng']['name'] . "\n";
+      $groundingContext .= "- Tên khách hàng: " . $customerName . "\n";
       $groundingContext .= "[CÂU HỎI HIỆN TẠI]: " . $currentUserPrompt . "\n";
 
       $contentPayload[] = [
@@ -210,7 +225,11 @@ class ChatbotController extends BaseController
       $responseArray = json_decode($rawResponse, true);
       $botReply = $responseArray['candidates'][0]['content']['parts'][0]['text'] ?? 'Trợ lý không thể xử lý câu hỏi này.';
 
-      $this->chatbotModel->addChatMessage([$chatbotId, $botReply, 'bot']);
+      $this->chatbotModel->addChatMessage([
+        'chatbot_id' => $chatbotId,
+        'message_text' => $botReply,
+        'sender' => 'bot'
+      ]);
 
       http_response_code(200);
       echo json_encode(['status' => 'success', 'message' => $botReply], JSON_UNESCAPED_UNICODE);
