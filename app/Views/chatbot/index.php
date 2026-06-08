@@ -199,6 +199,7 @@
 
 						appendMessage(data.message, false);
 					} catch (error) {
+						console.error('Error:', error);
 						appendMessage('Không thể kết nối tới máy chủ. Vui lòng thử lại.', false);
 					} finally {
 						sendBtn.disabled = false;
