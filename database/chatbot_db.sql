@@ -16,7 +16,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE chat_session (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   session_token VARCHAR(255) NOT NULL COMMENT 'Token định danh phiên làm việc của chatbot (có thể dùng để xác thực API)',
-  user_id VARCHAR(50) NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
   status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -41,7 +41,7 @@ CREATE TABLE chat_messages (
 
 -- BẢNG 3: TRI THỨC BOT / TRẢ LỜI NHANH (BOT_KNOWLEDGE_BASE)
 CREATE TABLE bot_knowledge_base (
-  id INT AUTO_INCREMENT,
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   keyword VARCHAR(255) NOT NULL COMMENT 'Từ khóa (Ví dụ: "hoàn tiền", "bảng giá", "liên hệ")',
   response_text TEXT NOT NULL COMMENT 'Câu trả lời tương ứng',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

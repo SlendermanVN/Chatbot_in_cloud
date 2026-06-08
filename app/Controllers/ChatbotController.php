@@ -96,11 +96,7 @@ class ChatbotController extends BaseController
       }
 
       $chatbotId = $this->chatbotModel->getChatSessionId($this->userId, $this->sessionToken);
-      $this->chatbotModel->addChatMessage([
-        'chatbot_id' => $chatbotId,
-        'message_text' => $currentUserPrompt,
-        'sender' => 'user'
-      ]);
+
 
       $input = $this->getInput();
 
@@ -221,6 +217,12 @@ class ChatbotController extends BaseController
       $rawResponse = HttpClient::request("POST", $this->geminiUrl, $payload, [
         "Content-Type" => "application/json"
       ], 30);
+
+      $this->chatbotModel->addChatMessage([
+        'chatbot_id' => $chatbotId,
+        'message_text' => $currentUserPrompt,
+        'sender' => 'user'
+      ]);
 
       $responseArray = json_decode($rawResponse, true);
       $botReply = $responseArray['candidates'][0]['content']['parts'][0]['text'] ?? 'Trợ lý không thể xử lý câu hỏi này.';

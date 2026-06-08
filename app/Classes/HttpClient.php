@@ -22,7 +22,16 @@ class HttpClient
     $method = strtoupper($method);
 
     // 1. KIẾN TRÚC ĐẦU VÀO: Đảm bảo mảng Header luôn hợp lệ để trộn cấu hình
-    $customHeaders = is_array($headers) ? $headers : [];
+    $rawHeaders = is_array($headers) ? $headers : [];
+    $customHeaders = [];
+
+    foreach ($rawHeaders as $key => $value) {
+      if (is_numeric($key)) {
+        $customHeaders[] = $value;
+      } else {
+        $customHeaders[] = trim($key) . ": " . trim($value);
+      }
+    }
 
     $options = [
       CURLOPT_URL => $url,
@@ -53,7 +62,17 @@ class HttpClient
         if (is_array($data)) {
           // Nếu là mảng -> Tự động chuyển thành JSON và set Content-Type
           $options[CURLOPT_POSTFIELDS] = json_encode($data);
-          $customHeaders[] = "Content-Type: application/json";
+
+          $hasContentType = false;
+          foreach ($customHeaders as $header) {
+            if (stripos($header, 'Content-Type:') === 0) {
+              $hasContentType = true;
+              break;
+            }
+          }
+          if (!$hasContentType) {
+            $customHeaders[] = "Content-Type: application/json";
+          }
         } else {
           // SỬA LỖI CHO AZURE: Nếu là chuỗi/nhị phân -> Đẩy thẳng làm thô (Dùng cho upload ảnh)
           $options[CURLOPT_POSTFIELDS] = $data;
@@ -73,15 +92,15 @@ class HttpClient
       $errorCode = curl_errno($ch);
       $errorMessage = curl_error($ch);
       curl_close($ch);
-      throw new Exception("Lỗi kết nối cURL ({$errorCode}): {$errorMessage}");
+      throw new Exception("Lỗi kết nối đến bên thứ ba (cURL Error {$errorCode}): {$errorMessage}");
     }
 
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     // Chuẩn REST: Các mã từ 400 trở lên đều là lỗi (Client Error hoặc Server Error)
-    if ($httpCode >= 400) {
-      throw new Exception("Lỗi HTTP phản hồi với mã ({$httpCode}). Chi tiết: {$response}");
+    if ($httpCode < 200 || $httpCode >= 300) {
+      throw new Exception("Máy chủ API trả về lỗi HTTP {$httpCode}. Nội dung phản hồi: {$response}");
     }
 
     return $response;
