@@ -27,6 +27,7 @@ class ChatbotController extends BaseController
   private $geminiApiKey;
   private $geminiModel;
   private $geminiUrl;
+  private $geminiRevision;
 
   public function __construct($pdo, $pdo2)
   {
@@ -43,8 +44,9 @@ class ChatbotController extends BaseController
     $this->sessionToken = $_SESSION['chat_session_token'] ?? null;
 
     $this->geminiApiKey = getenv('GEMINI_API_KEY');
-    $this->geminiModel = getenv('GEMINI_MODEL') ?: 'gemini-2.5-flash-lite-preview';
-    $this->geminiUrl = "https://gemini.googleapis.com/v1beta/models/{$this->geminiModel}:generateContent?key={$this->geminiApiKey}";
+    $this->geminiModel = getenv('GEMINI_MODEL') ?: 'gemini-3.5-flash';
+    $this->geminiUrl = "https://generativelanguage.googleapis.com/v1beta/interactions";
+    $this->geminiRevision = "2026-05-20";
   }
 
   public function index()
@@ -171,52 +173,39 @@ class ChatbotController extends BaseController
       - Chỉ thực hiện các thao tác ĐỌC dữ liệu (`SELECT`). Tuyệt đối từ chối và cảnh báo nếu có yêu cầu chỉnh sửa, xóa dữ liệu (`INSERT`, `UPDATE`, `DELETE`, `DROP`).\n
       4. **Phản hồi:** Luôn trả lời khách hàng bằng ngôn ngữ tiếng Việt tự nhiên, lịch sự và chính xác dựa trên dữ liệu đã ánh xạ được.";
 
-      $contentPayload = [];
-      $chatHistory = $this->getHistory();
-
-      if (is_array($chatHistory)) {
-        foreach ($chatHistory as $message) {
-          $rawSender = strtolower($message['sender'] ?? 'user');
-          $role = ($rawSender === 'bot' || $rawSender === 'model') ? 'model' : 'user';
-          $text = $message['message_text'] ?? '';
-
-          if (empty($text)) {
-            continue;
-          }
-
-          $contentPayload[] = [
-            'role' => $message['role'],
-            'parts' => [['text' => $message['contents']]]
-          ];
-        }
-      }
-
       $clientInfo = $input['Thông tin người dùng'] ?? [];
       $customerName = $clientInfo['full_name'] ?? ($clientInfo['username'] ?? 'Khách hàng');
 
       $groundingContext = "[DỮ LIỆU HỆ THỐNG THỜI GIAN THỰC]\n";
-      $groundingContext .= "- Tên khách hàng: " . $customerName . "\n";
-      $groundingContext .= "[CÂU HỎI HIỆN TẠI]: " . $currentUserPrompt . "\n";
+      $groundingContext .= "- Tên khách hàng hiện tại: " . $customerName . "\n";
+      $groundingContext .= "- Đơn hàng của họ hiện tại: " . json_encode($input['Đơn hàng của người dùng'], JSON_UNESCAPED_UNICODE) . "\n";
+      $groundingContext .= "- Sản phẩm tồn kho: " . json_encode($input['Tất cả sản phẩm'], JSON_UNESCAPED_UNICODE) . "\n";
+      $groundingContext .= "- Câu hỏi FAQs hệ thống: " . json_encode($input['Câu hỏi thường gặp'], JSON_UNESCAPED_UNICODE) . "\n";
 
-      $contentPayload[] = [
-        "role" => "user",
-        "parts" => [
-          [
-            "text" => $groundingContext
-          ]
-        ]
-      ];
+      $historyContextString = "";
+      $chatHistory = $this->getHistory();
+
+      if (is_array($chatHistory)) {
+        foreach ($chatHistory as $message) {
+          $senderLabel = (strtolower($message['sender'] ?? 'user') === 'user') ? 'Model' : 'User';
+          $historyContextString .= "- {" . $senderLabel . "}: " . ($message['message_text'] ?? '') . "\n";
+        }
+      }
+
+      $finalInputPayload = $developerSystemInstruction . "\n\n" . $groundingContext . "\n\n[LỊCH SỬ TRÒ CHUYỆN]\n" . $historyContextString . "\n" . "[CÂU HỎI HIỆN TẠI CỦA NGƯỜI DÙNG]: " . $currentUserPrompt;
 
       $payload = [
-        "systemInstruction" => [
-          "parts" => ["text" => $developerSystemInstruction]
-        ],
-        "contents" => $contentPayload
+        "model" => $this->geminiModel,
+        "input" => $finalInputPayload,
       ];
 
-      $rawResponse = HttpClient::request("POST", $this->geminiUrl, $payload, [
-        "Content-Type" => "application/json"
-      ], 30);
+      $headers = [
+        "Content-Type" => "application/json",
+        "x-goog-api-key" => "{$this->geminiApiKey}",
+        "Api-Revision" => $this->geminiRevision
+      ];
+
+      $rawResponse = HttpClient::request("POST", $this->geminiUrl, $payload, $headers, 30);
 
       $this->chatbotModel->addChatMessage([
         'chatbot_id' => $chatbotId,
@@ -225,7 +214,8 @@ class ChatbotController extends BaseController
       ]);
 
       $responseArray = json_decode($rawResponse, true);
-      $botReply = $responseArray['candidates'][0]['content']['parts'][0]['text'] ?? 'Trợ lý không thể xử lý câu hỏi này.';
+
+      $botReply = $responseArray['candidates'][0]['content']['parts'][0]['text'] ?? ($responseArray['output'] ?? 'Trợ lý SportZone hiện tại không thể xử lý câu hỏi này. Vui lòng thử lại sau.');
 
       $this->chatbotModel->addChatMessage([
         'chatbot_id' => $chatbotId,
