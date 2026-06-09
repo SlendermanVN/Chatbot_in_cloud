@@ -173,14 +173,16 @@ class ChatbotController extends BaseController
       - Chỉ thực hiện các thao tác ĐỌC dữ liệu (`SELECT`). Tuyệt đối từ chối và cảnh báo nếu có yêu cầu chỉnh sửa, xóa dữ liệu (`INSERT`, `UPDATE`, `DELETE`, `DROP`).\n
       4. **Phản hồi:** Luôn trả lời khách hàng bằng ngôn ngữ tiếng Việt tự nhiên, lịch sự và chính xác dựa trên dữ liệu đã ánh xạ được.";
 
+      $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT;
+
       $clientInfo = $input['Thông tin người dùng'] ?? [];
       $customerName = $clientInfo['full_name'] ?? ($clientInfo['username'] ?? 'Khách hàng');
 
       $groundingContext = "[DỮ LIỆU HỆ THỐNG THỜI GIAN THỰC]\n";
       $groundingContext .= "- Tên khách hàng hiện tại: " . $customerName . "\n";
-      $groundingContext .= "- Đơn hàng của họ hiện tại: " . json_encode($input['Đơn hàng của người dùng'], JSON_UNESCAPED_UNICODE) . "\n";
-      $groundingContext .= "- Sản phẩm tồn kho: " . json_encode($input['Tất cả sản phẩm'], JSON_UNESCAPED_UNICODE) . "\n";
-      $groundingContext .= "- Câu hỏi FAQs hệ thống: " . json_encode($input['Câu hỏi thường gặp'], JSON_UNESCAPED_UNICODE) . "\n";
+      $groundingContext .= "- Đơn hàng của họ hiện tại: " . json_encode($input['Đơn hàng của người dùng'], $jsonFlags) . "\n";
+      $groundingContext .= "- Sản phẩm tồn kho: " . json_encode($input['Tất cả sản phẩm'], $jsonFlags) . "\n";
+      $groundingContext .= "- Câu hỏi FAQs hệ thống: " . json_encode($input['Câu hỏi thường gặp'], $jsonFlags) . "\n";
 
       $historyContextString = "";
       $chatHistory = $this->getHistory();
