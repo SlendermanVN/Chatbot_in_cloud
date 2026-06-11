@@ -27,7 +27,6 @@ class ChatbotController extends BaseController
   private $geminiApiKey;
   private $geminiModel;
   private $geminiUrl;
-  private $geminiRevision;
 
   public function __construct($pdo, $pdo2)
   {
@@ -44,9 +43,11 @@ class ChatbotController extends BaseController
     $this->sessionToken = $_SESSION['chat_session_token'] ?? null;
 
     $this->geminiApiKey = getenv('GEMINI_API_KEY');
-    $this->geminiModel = getenv('GEMINI_MODEL') ?: 'gemini-3.5-flash';
-    $this->geminiUrl = "https://generativelanguage.googleapis.com/v1beta/interactions";
-    $this->geminiRevision = "2026-05-20";
+    // Mặc định khuyến nghị sử dụng mô hình gemini-1.5-flash hoặc gemini-2.5-flash ổn định toàn cầu
+    $this->geminiModel = getenv('GEMINI_MODEL') ?: 'gemini-1.5-flash';
+
+    // 🛠 SỬA ĐỔI: Sử dụng Endpoint chuẩn hóa RESTful của Google Gemini API
+    $this->geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$this->geminiModel}:generateContent?key={$this->geminiApiKey}";
   }
 
   public function index()
@@ -98,10 +99,7 @@ class ChatbotController extends BaseController
       }
 
       $chatbotId = $this->chatbotModel->getChatSessionId($this->userId, $this->sessionToken);
-
-
       $input = $this->getInput();
-
       $developerSystemInstruction = "# SYSTEM PROMPT: CHUYÊN GIA DỊCH THUẬT VÀ TRA CỨU CƠ SỞ DỮ LIỆU SPORTZONE\n
 
       Bạn là một Chatbot AI thông minh tích hợp trên website đồ thể thao SportZone Vietnam. Nhiệm vụ của bạn là hiểu câu hỏi bằng tiếng Việt của người dùng, ánh xạ chúng sang các bảng (Tables) và trường dữ liệu (Fields) tiếng Anh từ dữ liệu ban đầu để đưa ra câu trả lời. Có thể lấy các hình ảnh từ Azure Blob Storage để so sánh hoặc tìm hiểu thêm thông tin bằng cách lấy từ trường `image_path` trong thông tin sản phẩm và qua API của Azure Blob Storage.\n
@@ -173,7 +171,7 @@ class ChatbotController extends BaseController
       - Chỉ thực hiện các thao tác ĐỌC dữ liệu (`SELECT`). Tuyệt đối từ chối và cảnh báo nếu có yêu cầu chỉnh sửa, xóa dữ liệu (`INSERT`, `UPDATE`, `DELETE`, `DROP`).\n
       4. **Phản hồi:** Luôn trả lời khách hàng bằng ngôn ngữ tiếng Việt tự nhiên, lịch sự và chính xác dựa trên dữ liệu đã ánh xạ được.";
 
-      $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT;
+      $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
 
       $clientInfo = $input['Thông tin người dùng'] ?? [];
       $customerName = $clientInfo['full_name'] ?? ($clientInfo['username'] ?? 'Khách hàng');
@@ -189,26 +187,32 @@ class ChatbotController extends BaseController
 
       if (is_array($chatHistory)) {
         foreach ($chatHistory as $message) {
-          $senderLabel = (strtolower($message['sender'] ?? 'user') === 'user') ? 'Model' : 'User';
+          $senderLabel = (strtolower($message['sender'] ?? 'user') === 'user') ? 'User' : 'Model';
           $historyContextString .= "- {" . $senderLabel . "}: " . ($message['message_text'] ?? '') . "\n";
         }
       }
 
       $finalInputPayload = $developerSystemInstruction . "\n\n" . $groundingContext . "\n\n[LỊCH SỬ TRÒ CHUYỆN]\n" . $historyContextString . "\n" . "[CÂU HỎI HIỆN TẠI CỦA NGƯỜI DÙNG]: " . $currentUserPrompt;
 
+      // 🛠 SỬA ĐỔI: Đóng gói Payload theo đúng cấu trúc yêu cầu của Google Gemini API tiêu chuẩn
       $payload = [
-        "model" => $this->geminiModel,
-        "input" => $finalInputPayload,
+        "contents" => [
+          [
+            "parts" => [
+              ["text" => $finalInputPayload]
+            ]
+          ]
+        ]
       ];
 
       $headers = [
-        "Content-Type" => "application/json",
-        "x-goog-api-key" => "{$this->geminiApiKey}",
-        "Api-Revision" => $this->geminiRevision
+        "Content-Type" => "application/json"
       ];
 
+      // Gửi request thông qua HttpClient
       $rawResponse = HttpClient::request("POST", $this->geminiUrl, $payload, $headers, 30);
 
+      // Lưu trữ tin nhắn của người dùng vào database
       $this->chatbotModel->addChatMessage([
         'chatbot_id' => $chatbotId,
         'message_text' => $currentUserPrompt,
@@ -217,8 +221,10 @@ class ChatbotController extends BaseController
 
       $responseArray = json_decode($rawResponse, true);
 
-      $botReply = $responseArray['candidates'][0]['content']['parts'][0]['text'] ?? ($responseArray['output'] ?? 'Trợ lý SportZone hiện tại không thể xử lý câu hỏi này. Vui lòng thử lại sau.');
+      // 🛠 SỬA ĐỔI: Bóc tách cấu trúc JSON chuẩn trả về từ Google Gemini API
+      $botReply = $responseArray['candidates'][0]['content']['parts'][0]['text'] ?? 'Trợ lý SportZone hiện tại gặp khó khăn khi phân tích câu trả lời. Vui lòng thử lại sau.';
 
+      // Lưu trữ tin nhắn của Bot vào database
       $this->chatbotModel->addChatMessage([
         'chatbot_id' => $chatbotId,
         'message_text' => $botReply,

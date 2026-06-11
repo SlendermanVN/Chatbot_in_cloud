@@ -1,17 +1,14 @@
 <div class="bg-[#0b0f19] min-h-screen py-10 lg:py-16 text-gray-300">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-		<!-- Page Header -->
 		<div class="text-center mb-12">
 			<h1 class="text-3xl font-extrabold text-white tracking-tight sm:text-4xl">Trợ lý ảo Sportzone Chatbot</h1>
 			<p class="mt-3 max-w-2xl mx-auto text-lg text-gray-400 sm:mt-4">Giải đáp thắc mắc và cung cấp thông tin về thể
 				thao và luyện tập.</p>
 		</div>
 
-		<!-- Chatbot Interface -->
 		<div class="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800 top-24">
 
-			<!-- Chatbot header -->
 			<header class="flex items-center mb-6 text-white">
 				<div class="w-12 h-12 bg-[#ff6600] rounded-full border border-gray-700 flex items-center justify-center">
 					<i class="fa-solid fa-robot text-2xl"></i>
@@ -21,7 +18,6 @@
 				</div>
 			</header>
 
-			<!-- Chatbot message UI -->
 			<div class="grid xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.7fr)] gap-6 items-start">
 				<div class="space-y-5 flex flex-col h-[46rem]">
 					<div id="chatbot-message-list"
@@ -66,11 +62,8 @@
 						<?php endif; ?>
 					</div>
 
-					<form id="chatbot-form" method="POST" action="<?= BASE_URL ?>/index.php?"
+					<form id="chatbot-form" method="POST" action="index.php?route=ask_chatbot"
 						class="shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
-
-						<input type="hidden" name="action" value="ask_chatbot">
-
 						<div class="flex flex-col sm:flex-row gap-3">
 							<div class="flex-1 relative">
 								<i class="fa-regular fa-face-smile absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
@@ -99,12 +92,15 @@
 							</div>
 						</div>
 						<div class="flex flex-wrap gap-3">
-							<span class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200">Chính sách
-								đổi trả như thế nào?</span>
-							<span class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200">Có giao hàng
-								trong ngày không?</span>
-							<span class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200">Làm sao để
-								chọn size phù hợp?</span>
+							<span
+								class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200 cursor-pointer hover:bg-white/10 transition-colors opacity-90">Chính
+								sách đổi trả như thế nào?</span>
+							<span
+								class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200 cursor-pointer hover:bg-white/10 transition-colors opacity-90">Có
+								giao hàng trong ngày không?</span>
+							<span
+								class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200 cursor-pointer hover:bg-white/10 transition-colors opacity-90">Làm
+								sao để chọn size phù hợp?</span>
 						</div>
 					</div>
 					<div class="bg-gray-900/80 border border-gray-800 rounded-2xl p-5">
@@ -182,10 +178,7 @@
 					sendBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
 					try {
-						const actionParam = form.querySelector('input[name="action"]');
-						const targetUrl = `${form.action}?action=${actionParam.value}`;
-
-						const response = await fetch(targetUrl, {
+						const response = await fetch(form.getAttribute('action'), {
 							method: 'POST',
 							credentials: 'same-origin',
 							headers: {
@@ -211,6 +204,14 @@
 						sendBtn.disabled = false;
 						sendBtn.classList.remove('opacity-70', 'cursor-not-allowed');
 					}
+				});
+
+				// Đăng ký sự kiện click cho các thẻ gợi ý nhanh để nâng cao trải nghiệm người dùng
+				document.querySelectorAll('span.cursor-pointer').forEach(span => {
+					span.addEventListener('click', () => {
+						input.value = span.textContent;
+						form.requestSubmit();
+					});
 				});
 
 				scrollToBottom();
