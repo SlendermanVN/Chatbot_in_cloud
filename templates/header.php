@@ -1,7 +1,7 @@
 <?php
 // Đảm bảo BASE_URL luôn tồn tại để tránh gãy link
 if (!defined('BASE_URL')) {
-    define('BASE_URL', '/main-repo/public');
+    define('BASE_URL', '');
 }
 ?>
 <!DOCTYPE html>
