@@ -66,8 +66,11 @@
 						<?php endif; ?>
 					</div>
 
-					<form id="chatbot-form" method="POST" action="<?= BASE_URL ?>/index.php?route=ask_chatbot"
+					<form id="chatbot-form" method="POST" action="<?= BASE_URL ?>/index.php?"
 						class="shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+
+						<input type="hidden" name="action" value="ask_chatbot">
+
 						<div class="flex flex-col sm:flex-row gap-3">
 							<div class="flex-1 relative">
 								<i class="fa-regular fa-face-smile absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
@@ -179,7 +182,10 @@
 					sendBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
 					try {
-						const response = await fetch(form.action, {
+						const actionParam = form.querySelector('input[name="action"]');
+						const targetUrl = `${form.action}?action=${actionParam.value}`;
+
+						const response = await fetch(targetUrl, {
 							method: 'POST',
 							credentials: 'same-origin',
 							headers: {
