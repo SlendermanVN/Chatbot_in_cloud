@@ -62,7 +62,7 @@
 						<?php endif; ?>
 					</div>
 
-					<form id="chatbot-form" method="POST" action="index.php?route=ask_chatbot"
+					<form id="chatbot-form" method="POST" action="<?= BASE_URL ?>/index.php?route=ask_chatbot"
 						class="shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
 						<div class="flex flex-col sm:flex-row gap-3">
 							<div class="flex-1 relative">
