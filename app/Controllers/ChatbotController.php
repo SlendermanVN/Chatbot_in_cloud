@@ -3,7 +3,6 @@ require_once __DIR__ . "/BaseController.php";
 require_once __DIR__ . "/../Models/Order.php";
 require_once __DIR__ . "/../Models/Product.php";
 require_once __DIR__ . "/../Models/Review.php";
-require_once __DIR__ . "/../Models/Setting.php";
 require_once __DIR__ . "/../Models/Faq.php";
 require_once __DIR__ . "/../Models/Chatbot.php";
 require_once __DIR__ . "/../Models/News.php";
@@ -39,7 +38,6 @@ class ChatbotController extends BaseController
     $this->faqModel = new Faq($pdo);
     $this->chatbotModel = new Chatbot($pdo2);
     $this->newsModel = new News($pdo);
-    $this->settingModel = new Setting($pdo);
 
     $this->userId = $_SESSION['user_id'] ?? null;
     $this->sessionToken = $_SESSION['chat_session_token'] ?? null;
@@ -59,12 +57,8 @@ class ChatbotController extends BaseController
       $this->createSession();
     }
 
-    $rawSettings = $this->settingModel->getAll();
-    $settings = array_column($rawSettings, 'setting_value', 'setting_key');
-
     $this->render("chatbot/index", [
       'chatHistory' => $this->getHistory(),
-      'setting' => $settings
     ]);
   }
 
